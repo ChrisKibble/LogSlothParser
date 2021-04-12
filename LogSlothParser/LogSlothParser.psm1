@@ -41,87 +41,52 @@ Class LogSloth {
     }
 }
 
-Function Import-LogSloth {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$logData,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$logFile,
-        [Array]$headers = @(),
-        [switch]$skipWarning
+Function SanitizeByMatch {
+    Param(
+        [string]$inputData,
+        [string]$rx,
+        [string]$stub,
+        [switch]$quoted = $false
     )
 
-    Write-Verbose "Import-LogSloth Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Import-LogSloth)" }
+    Write-Verbose "Private SanitizeByMatch Function is beginning"
 
-    If($logFile) {
-        Try {
-            Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw
-        } Catch {
-            Throw "Error reading $logFile $($_.Exception.Message)"
-        }
+    Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
+    $rxLookup = [regex]::new($rx)
+    $matchList = $rxLookup.matches($inputData)
+    $index = 0
+    
+    $replacements = [System.Collections.ArrayList]::New()
+
+    Write-Verbose "Getting Matches for Input Data"
+    ForEach($m in $matchList) {
+        $thisMatch = $m.groups[1].Value
+        Write-Verbose "... Found $thisMatch"
+        $replacements.Add($thisMatch) | Out-Null
     }
+    Write-Verbose "Completed Getting Matches for Input Data"
 
-    $log = [LogSloth]::New()
+    $replList = [System.Collections.ArrayList]::New()
 
-    Write-Verbose "Getting Log Type using Get-LogSlothType Function"
-    $log.logType = Get-LogSlothType -LogData $logData -skipWarning
-    Write-Verbose "Detected log type is $($log.logType)"
-
-    if($log.logType -eq [LogType]::Nothing) {
-        Throw "Cannot determine type of log to import"
-    }
-
-    $oLog = [System.Collections.ArrayList]::New(@())
-    Switch ($log.logType) {
-        "SCCM" { 
-            Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData 
-        }
-        "SCCM2007" { 
-            Write-Verbose "Importing SCCM Log using Import-LogSCCM2007 Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCM2007 -logData $logData 
-        }
-        "CSV" {
-            Write-Verbose "Importing CSV using Built-in PowerShell Function"
-            $ConvertParams = @{
-                InputObject = $logData
-                Delimiter = ","
+    Write-Verbose "Looping Over Unique Replacement Array to gather list of Text Strings to Replace"
+    ForEach($m in $replacements | Where-Object { $_ -ne "" } | Sort-Object -Unique) {
+        $index++
+        $replText = "$stub$index"
+        if($quoted) { $replText = "`"$replText`""}
+        Write-Verbose "... Adding '$m' => '$replText' using stub '$stub'"
+        $replList.Add(
+            [PSCustomObject]@{
+                "OriginalText" = $m
+                "ReplacementText" = $replText
+                "Stub" = $stub
             }
-            if($headers) { $ConvertParams.Add("Header",$headers) }
-            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-        }
-        "TSV" {
-            Write-Verbose "Importing TSV using Built-in PowerShell Function"
-            $ConvertParams = @{
-                InputObject = $logData
-                Delimiter = "`t"
-            }
-            if($headers) { $ConvertParams.Add("Header",$headers) }
-            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-        }
-        "ColonSV" {
-            Write-Verbose "Importing ColonSV using Built-in PowerShell Function"
-            $ConvertParams = @{
-                InputObject = $logData
-                Delimiter = ";"
-            }
-            if($headers) { $ConvertParams.Add("Header",$headers) }
-            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-        }
-        default {
-            Throw "No action defined for this log type."
-        }
-    }
+        ) | Out-Null
+    }    
 
-    $log.logData = $oLog
+    Write-Verbose "Private SanitizeByMatch Function is done"
 
-    Write-Verbose "Function is complete, Returning."
-    Return $log
+    Return $replList
 }
-
 Function Get-LogSlothType {
     
     [Cmdletbinding()]
@@ -214,53 +179,87 @@ Function Get-LogSlothType {
     Write-Verbose "Could not find a match, Returning 'Nothing'"
     Return [LogType]::Nothing
 }
-
-Function SanitizeByMatch {
-    Param(
-        [string]$inputData,
-        [string]$rx,
-        [string]$stub,
-        [switch]$quoted = $false
+Function Import-LogSloth {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
+        [String]$logData,
+        [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
+        [System.IO.FileInfo]$logFile,
+        [Array]$headers = @(),
+        [switch]$skipWarning
     )
 
-    Write-Verbose "Private SanitizeByMatch Function is beginning"
+    Write-Verbose "Import-LogSloth Function is beginning"
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Import-LogSloth)" }
 
-    Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
-    $rxLookup = [regex]::new($rx)
-    $matchList = $rxLookup.matches($inputData)
-    $index = 0
-    
-    $replacements = [System.Collections.ArrayList]::New()
-
-    Write-Verbose "Getting Matches for Input Data"
-    ForEach($m in $matchList) {
-        $thisMatch = $m.groups[1].Value
-        Write-Verbose "... Found $thisMatch"
-        $replacements.Add($thisMatch) | Out-Null
+    If($logFile) {
+        Try {
+            Write-Verbose "LogFile Parameter Defined, Importing $logFile"
+            $logData = Get-Content $logFile -Raw
+        } Catch {
+            Throw "Error reading $logFile $($_.Exception.Message)"
+        }
     }
-    Write-Verbose "Completed Getting Matches for Input Data"
 
-    $replList = [System.Collections.ArrayList]::New()
+    $log = [LogSloth]::New()
 
-    Write-Verbose "Looping Over Unique Replacement Array to gather list of Text Strings to Replace"
-    ForEach($m in $replacements | Where-Object { $_ -ne "" } | Sort-Object -Unique) {
-        $index++
-        $replText = "$stub$index"
-        if($quoted) { $replText = "`"$replText`""}
-        Write-Verbose "... Adding '$m' => '$replText' using stub '$stub'"
-        $replList.Add(
-            [PSCustomObject]@{
-                "OriginalText" = $m
-                "ReplacementText" = $replText
-                "Stub" = $stub
+    Write-Verbose "Getting Log Type using Get-LogSlothType Function"
+    $log.logType = Get-LogSlothType -LogData $logData -skipWarning
+    Write-Verbose "Detected log type is $($log.logType)"
+
+    if($log.logType -eq [LogType]::Nothing) {
+        Throw "Cannot determine type of log to import"
+    }
+
+    $oLog = [System.Collections.ArrayList]::New(@())
+    Switch ($log.logType) {
+        "SCCM" { 
+            Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
+            [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData 
+        }
+        "SCCM2007" { 
+            Write-Verbose "Importing SCCM Log using Import-LogSCCM2007 Private Function"
+            [System.Collections.ArrayList]$oLog = Import-LogSCCM2007 -logData $logData 
+        }
+        "CSV" {
+            Write-Verbose "Importing CSV using Built-in PowerShell Function"
+            $ConvertParams = @{
+                InputObject = $logData
+                Delimiter = ","
             }
-        ) | Out-Null
-    }    
+            if($headers) { $ConvertParams.Add("Header",$headers) }
+            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+        }
+        "TSV" {
+            Write-Verbose "Importing TSV using Built-in PowerShell Function"
+            $ConvertParams = @{
+                InputObject = $logData
+                Delimiter = "`t"
+            }
+            if($headers) { $ConvertParams.Add("Header",$headers) }
+            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+        }
+        "ColonSV" {
+            Write-Verbose "Importing ColonSV using Built-in PowerShell Function"
+            $ConvertParams = @{
+                InputObject = $logData
+                Delimiter = ";"
+            }
+            if($headers) { $ConvertParams.Add("Header",$headers) }
+            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+        }
+        default {
+            Throw "No action defined for this log type."
+        }
+    }
 
-    Write-Verbose "Private SanitizeByMatch Function is done"
+    $log.logData = $oLog
 
-    Return $replList
+    Write-Verbose "Function is complete, Returning."
+    Return $log
 }
+
 Function Import-LogSlothSanitized {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogClass")]
