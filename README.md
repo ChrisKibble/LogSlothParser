@@ -22,11 +22,12 @@ Sample Use:
 
 ## Import-LogSlothSanitized
 
-Used to import a log file and then sanitize the data to remove certain information that should not be shared in a public setting
+Used to import a log file and then sanitize the data to remove certain information that should not be shared in a public setting. The `headers` parameter may only be used when importing a delimited file.  If headers are not defined, the first line will be considered the headers.
 
 Sample Use:
 ```
 > Import-LogSlothSanitized -LogFile c:\windows\ccm\logs\execmgr.log -Sanitize All -Prefix "XXX"
+> Import-LogSlothSanitized -LogFile c:\temp\generic.csv -Headers @("DateTime","LogData")
 > Import-LogSlothSanitized -LogData (Get-Content c:\windows\ccm\logs\execmgr.log -Raw) -Sanitize IPv4,SID,URLHost,CMSiteCode
 > $log = Import-LogSloth -LogFile c:\windows\ccm\logs\execmgr.log | Import-LogSlothSanitized -Sanitize SID,GUID
 > Get-Content c:\windows\ccm\logs\execmgr.log | Import-LogSlothSanitized

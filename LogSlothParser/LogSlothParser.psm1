@@ -279,6 +279,7 @@ Function Import-LogSlothSanitized {
             if($_ -match "(?i)^[a-z]+$") { $true } else { throw "You must use only letters A-Z." }
         })]
         [string]$prefix = "sanitized",
+        [Array]$headers = @(),
         [switch]$skipWarning
     )
 
@@ -289,11 +290,11 @@ Function Import-LogSlothSanitized {
     Try {
         If($logData) { 
             Write-Verbose "Log Santized calling Import Function for passed Log Data"
-            [LogSloth]$log = Import-LogSloth -logData $logData -skipWarning
+            [LogSloth]$log = Import-LogSloth -logData $logData -skipWarning -headers $headers
         }
         If($logFile) { 
             Write-Verbose "Log Santized calling Import Function for passed Log File"
-            [LogSloth]$log = Import-LogSloth -logFile $logFile -skipWarning
+            [LogSloth]$log = Import-LogSloth -logFile $logFile -skipWarning -headers $headers
         }
     } Catch {
         Throw "Unable to read log data $($_.Exception.Message)"        
@@ -392,24 +393,32 @@ Function Import-LogSlothSanitized {
     } # // End of Switch (Generic)
 
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
-    ForEach($itemToReplace in $replacementList) {
-        If($log.logType -in ([LogType]::SCCM,[LogType]::SCCM2007)) {
-            Write-Verbose "... Log is an SCCM or SCCM2007 Log - Processing only 'text' field"
-            # Only Replace Text Field
-            ForEach($replacement in $(SanitizeByMatch -inputData $log.LogData.Text -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted)) {
-                Write-Verbose "... Replacing '$($replacement.OriginalText)' with '$($replacement.ReplacementText)'"
-                $log.santizedReplacements.Add(
-                    [PSCustomObject]@{
-                        OriginalText = $replacement.OriginalText
-                        ReplacementText = $replacement.ReplacementText
-                    }
-                ) | Out-Null
-                $log.logData.ForEach{ $_.Text = $_.Text -replace [regex]::Escape($replacement.OriginalText),$replacement.ReplacementText }
-            }
-        } else {
-            ### TODO ###
+    
+    [System.Collections.ArrayList]$fieldsToSanitize = @()
+    If($log.logType -in ([LogType]::SCCM,[LogType]::SCCM2007)) {
+        Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM Log)"
+        $fieldsToSanitize.Add("Text") | Out-Null
+    } else {
+        $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
+            Write-Verbose "Adding Field '$($_.Name)' to Fields to Sanitize List"
+            $fieldsToSanitize.Add($_.Name) | Out-Null
         }
     }
+
+    ForEach($itemToReplace in $replacementList) {
+        # Currently only works on 'text' field -- TODO Next: Change to work on all fields defined in $FieldsToSanitize
+        ForEach($replacement in $(SanitizeByMatch -inputData $log.LogData.Text -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted)) {
+            Write-Verbose "... Replacing '$($replacement.OriginalText)' with '$($replacement.ReplacementText)'"
+            $log.santizedReplacements.Add(
+                [PSCustomObject]@{
+                    OriginalText = $replacement.OriginalText
+                    ReplacementText = $replacement.ReplacementText
+                }
+            ) | Out-Null
+            $log.logData.ForEach{ $_.Text = $_.Text -replace [regex]::Escape($replacement.OriginalText),$replacement.ReplacementText }
+        }
+    }
+
 
     Write-Verbose "Function is complete and returning"
     Return $log
