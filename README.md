@@ -10,11 +10,12 @@ All of the below functions will also accept the `-SkipWarning` parameter that di
 
 ## Import-LogSloth
 
-Used to import a log file and convert it into a custom `[LogSloth]` class (see lower section for more information).
+Used to import a log file and convert it into a custom `[LogSloth]` class (see lower section for more information).  The `headers` parameter may only be used when importing a delimited file.  If headers are not defined, the first line will be considered the headers.
 
 Sample Use:
 ```
 > Import-LogSloth -LogFile c:\windows\ccm\logs\execmgr.log
+> Import-LogSloth -LogFile c:\temp\generic.csv -Headers @("DateTime","LogData")
 > Import-LogSloth -LogData (Get-Content c:\windows\ccm\logs\execmgr.log -Raw)
 > Get-Content c:\windows\ccm\logs\execmgr.log | Import-LogSloth
 ```
