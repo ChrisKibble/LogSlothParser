@@ -5,6 +5,7 @@ Enum LogType {
     SCCM
     MECM
     SCCM2007
+    W3CExtended
     Nothing
 }
 
@@ -113,6 +114,7 @@ Function Get-LogSlothType {
     Write-Verbose "Initalizing RegEx Checks"
     $rxSCCM = [regex]::new('^<!\[LOG')
     $rxSCCMSimple = [regex]::new('.*?<.*?><.*?><thread=\d{1,} \(.*?\)>')
+    $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
 
     Write-Verbose "Using RegEx to Determine Log Type"
     Switch ($logData) {
@@ -127,7 +129,16 @@ Function Get-LogSlothType {
             Write-Verbose "RegEx Confirmation that Log is SCCM2007.  Returning."
             Return [LogType]::SCCM2007; break 
         }
+
+        # W3C Extended
+        { $rxW3CExtended.IsMatch($logData) } { 
+            Write-Verbose "RegEx Confirmation that Log is W3CExtended.  Returning."
+            Return [LogType]::W3CExtended; break 
+        }
+
     }
+
+    # Check for W3C Extended by looking at first line of log
 
     # Not a pre-defined type, let's make some best guesses
     Try {
@@ -221,6 +232,10 @@ Function Import-LogSloth {
         "SCCM2007" { 
             Write-Verbose "Importing SCCM Log using Import-LogSCCM2007 Private Function"
             [System.Collections.ArrayList]$oLog = Import-LogSCCM2007 -logData $logData 
+        }
+        "W3CExtended" {
+            Write-Verbose "Importing W3C Extended Log using Import-LogW3CExtended Private Function"
+            [System.Collections.ArrayList]$oLog = Import-LogW3CExtended -logData $logData
         }
         "CSV" {
             Write-Verbose "Importing CSV using Built-in PowerShell Function"
@@ -395,18 +410,33 @@ Function Import-LogSlothSanitized {
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
     
     [System.Collections.ArrayList]$fieldsToSanitize = @()
-    If($log.logType -in ([LogType]::SCCM,[LogType]::SCCM2007)) {
-        Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM Log)"
-        $fieldsToSanitize.Add("Text") | Out-Null
-    } else {
-        $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
-            Write-Verbose "Adding Field '$($_.Name)' to Fields to Sanitize List"
-            $fieldsToSanitize.Add($_.Name) | Out-Null
+    Switch($log.logType) {
+        "SCCM" {
+            Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM Log)"
+            $fieldsToSanitize.Add("Text") | Out-Null   
+            break
+        }
+        "SCCM2007" {
+            Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM2007 Log)"
+            $fieldsToSanitize.Add("Text") | Out-Null   
+            break
+        }
+        default {
+            Write-Verbose "Default - Sanitize All Fields"
+            $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
+                Write-Verbose "Adding Field '$($_.Name)' to Fields to Sanitize List"
+                $fieldsToSanitize.Add($_.Name) | Out-Null
+            }
         }
     }
 
+    # ReplacementList contains a list of regex rules that need to be run
+    # in order to replace data in one or more fields with their sanitized values
+    
     ForEach($itemToReplace in $replacementList) {
         # Currently only works on 'text' field -- TODO Next: Change to work on all fields defined in $FieldsToSanitize
+        
+        <#
         ForEach($replacement in $(SanitizeByMatch -inputData $log.LogData.Text -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted)) {
             Write-Verbose "... Replacing '$($replacement.OriginalText)' with '$($replacement.ReplacementText)'"
             $log.santizedReplacements.Add(
@@ -417,6 +447,7 @@ Function Import-LogSlothSanitized {
             ) | Out-Null
             $log.logData.ForEach{ $_.Text = $_.Text -replace [regex]::Escape($replacement.OriginalText),$replacement.ReplacementText }
         }
+        #>
     }
 
 
@@ -527,4 +558,24 @@ Function Import-LogSCCM2007 {
     Return $logArray
 }
 
+Function Import-LogW3CExtended {
+    
+    [CmdLetBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $logData
+    )
+
+    Write-Verbose "Private Import-LogW3CExtended Function is beginning"
+
+    $w3cLogData = $logData -split "`r`n" | Where-Object { $_ -ne "" }
+    $headers = $w3cLogData.where{$_ -like "#Fields:*"} | Select-Object -First 1
+    $headers = $headers -replace "#Fields:[ |]","" -split " "
+    $logContent = $w3cLogData.where{$_ -notlike "#*" }
+
+    $oLog = $logContent | ConvertFrom-Csv -Delimiter " " -Header $headers
+
+    Return $oLog
+}
 Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType
