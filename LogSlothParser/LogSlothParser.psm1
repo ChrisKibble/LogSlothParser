@@ -1,4 +1,7 @@
 Enum LogType {
+    CSV
+    TSV
+    ColonSV
     SCCM
     MECM
     SCCM2007
@@ -45,6 +48,7 @@ Function Import-LogSloth {
         [String]$logData,
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
         [System.IO.FileInfo]$logFile,
+        [Array]$headers = @(),
         [switch]$skipWarning
     )
 
@@ -79,6 +83,36 @@ Function Import-LogSloth {
         "SCCM2007" { 
             Write-Verbose "Importing SCCM Log using Import-LogSCCM2007 Private Function"
             [System.Collections.ArrayList]$oLog = Import-LogSCCM2007 -logData $logData 
+        }
+        "CSV" {
+            Write-Verbose "Importing CSV using Built-in PowerShell Function"
+            $ConvertParams = @{
+                InputObject = $logData
+                Delimiter = ","
+            }
+            if($headers) { $ConvertParams.Add("Header",$headers) }
+            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+        }
+        "TSV" {
+            Write-Verbose "Importing TSV using Built-in PowerShell Function"
+            $ConvertParams = @{
+                InputObject = $logData
+                Delimiter = "`t"
+            }
+            if($headers) { $ConvertParams.Add("Header",$headers) }
+            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+        }
+        "ColonSV" {
+            Write-Verbose "Importing ColonSV using Built-in PowerShell Function"
+            $ConvertParams = @{
+                InputObject = $logData
+                Delimiter = ";"
+            }
+            if($headers) { $ConvertParams.Add("Header",$headers) }
+            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+        }
+        default {
+            Throw "No action defined for this log type."
         }
     }
 
@@ -128,6 +162,53 @@ Function Get-LogSlothType {
             Write-Verbose "RegEx Confirmation that Log is SCCM2007.  Returning."
             Return [LogType]::SCCM2007; break 
         }
+    }
+
+    # Not a pre-defined type, let's make some best guesses
+    Try {
+        Write-Verbose "Converting Log Data to CSV"
+        $csv = $logData | ConvertFrom-csv   
+        Write-Verbose "Conversion to CSV was successful"
+    } Catch {
+        Write-Verbose "Failed to Convert Log  to CSV $($_.Exception.Message)"
+        $csv = $null
+    }
+
+    Try {
+        Write-Verbose "Converting Log Data to TSV"
+        $tsv = $logData | ConvertFrom-Csv -Delimiter "`t"   
+        Write-Verbose "Conversion to TSV was successful"
+    } Catch {
+        Write-Verbose "Failed to Convert Log to TSV $($_.Exception.Message)"
+        $tsv = $null
+    }
+
+    Try {
+        Write-Verbose "Converting Log Data to Colon Delimited"
+        $ColonSV = $logData | ConvertFrom-Csv -Delimiter ";"   
+        Write-Verbose "Conversion to Colon Delimited was successful"
+    } Catch {
+        Write-Verbose "Failed to Convert Log to TSV $($_.Exception.Message)"
+        $ColonSV = $null
+    }
+
+    if($csv -and $tsv) {
+        $csvItems = $csv[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count
+        $tsvItems = $tsv[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count
+        if($csvItems -gt 1 -and $csvItems -ge $tsvItems) {
+            Write-Verbose "There are equal or more properties in the CSV than TSV, selecting CSV as Winner"
+            Return [LogType]::CSV
+        } elseif($tsvItems -gt 1) {
+            Write-Verbose "There are more properties in the TSV than CSV, selecting TSV as Winner"
+            Return [LogType]::TSV
+        } else {
+            Write-Verbose "There is no clear winner between CSV and TSV, cannot select Winner"
+        }
+    }
+
+    If($ColonSV[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count -gt 1) {
+        Write-Verbose "There are multiple properties returned with colon separated values, selecting ColonSV as Winner"
+        Return [LogType]::ColonSV
     }
 
     Write-Verbose "Could not find a match, Returning 'Nothing'"
