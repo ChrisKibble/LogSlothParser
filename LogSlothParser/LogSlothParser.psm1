@@ -450,7 +450,6 @@ Function Import-LogSlothSanitized {
 
     ForEach($itemToReplace in $replacementList) {
         $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
-        $rule | Out-Host
         if($rule) {
             $sanitizedTextRules.AddRange($rule) | Out-Null
         }
