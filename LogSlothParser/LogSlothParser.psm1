@@ -438,7 +438,6 @@ Function Import-LogSlothSanitized {
     [string]$inputData = ""
 
     ForEach($field in $fieldsToSanitize) {
-        Write-Verbose $field
         [string]$text = $($log.logData | Select-Object -ExpandProperty $field) -join "`r`n"
         $inputData = -join($inputData,$text)
     }
