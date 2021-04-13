@@ -54,23 +54,22 @@ Function SanitizeByMatch {
 
     Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
     $rxLookup = [regex]::new($rx)
-    $matchList = $rxLookup.matches($inputData)
-    $index = 0
-    
-    $replacements = [System.Collections.ArrayList]::New()
 
     Write-Verbose "Getting Matches for Input Data"
-    ForEach($m in $matchList) {
-        $thisMatch = $m.groups[1].Value
-        Write-Verbose "... Found $thisMatch (Rule = $rx)"
-        $replacements.Add($thisMatch) | Out-Null
-    }
+    $matchList = $rxLookup.matches($inputData)
+    
+    Write-Verbose "Reducing to Unique List of Matches"
+    $uniqueMatchList = New-Object -TypeName System.Collections.Generic.HashSet[String]
+    [void]$matchList.ForEach{ $uniqueMatchList.Add($_.Groups[1].Value) }
+
     Write-Verbose "Completed Getting Matches for Input Data"
 
     $replList = [System.Collections.ArrayList]::New()
 
     Write-Verbose "Looping Over Unique Replacement Array to gather list of Text Strings to Replace"
-    ForEach($m in $replacements | Where-Object { $_ -ne "" } | Sort-Object -Unique) {
+    $index = 0
+
+    ForEach($m in $uniqueMatchList | Where-Object { $_ -ne "" }) {
         $index++
         $replText = "$stub$index"
         if($quoted) { $replText = "`"$replText`""}
@@ -451,6 +450,7 @@ Function Import-LogSlothSanitized {
 
     ForEach($itemToReplace in $replacementList) {
         $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
+        $rule | Out-Host
         if($rule) {
             $sanitizedTextRules.AddRange($rule) | Out-Null
         }
@@ -461,6 +461,11 @@ Function Import-LogSlothSanitized {
     # those fields.
 
     Write-Verbose "Looping over rules to replace text"
+
+    $sanitizedTextRules.ForEach{
+        Write-Verbose "$(Get-Date) $($_.OriginalText)"
+    }
+    break
 
     ForEach($replRule in $sanitizedTextRules) {
         ForEach($field in $fieldsToSanitize) {
