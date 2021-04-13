@@ -62,7 +62,7 @@ Function SanitizeByMatch {
     Write-Verbose "Getting Matches for Input Data"
     ForEach($m in $matchList) {
         $thisMatch = $m.groups[1].Value
-        Write-Verbose "... Found $thisMatch"
+        Write-Verbose "... Found $thisMatch (Rule = $rx)"
         $replacements.Add($thisMatch) | Out-Null
     }
     Write-Verbose "Completed Getting Matches for Input Data"
@@ -398,7 +398,7 @@ Function Import-LogSlothSanitized {
         { $_ -band [SanitizeType]::ipv4 } {
             # IP Addresses
             Write-Verbose "...... Processing IPv4 Addresses"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"; Stub="false"; Quoted=$true}) | Out-Null
+            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))"; Stub="$($prefix)ip"; Quoted=$true}) | Out-Null
         }
         { $_ -band [SanitizeType]::sid } {
             # SID Format
@@ -453,37 +453,34 @@ Function Import-LogSlothSanitized {
     ForEach($itemToReplace in $replacementList) {
         $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
         if($rule) {
-            $sanitizedTextRules.Add($rule) | Out-Null
+            $sanitizedTextRules.AddRange($rule) | Out-Null
         }
-
-        <#
-        ForEach($replacement in $sanitizedTextList) {
-            $log.logData.ForEach{ $_.Text = $_.Text -replace [regex]::Escape($replacement.OriginalText),$replacement.ReplacementText }
-        }
-        #>
     }
 
     # We now know the text that needs to be replaced ($sanitizedTextRules) and the fields they need to be replaced in ($fieldsToSanitize)
     # that was based on the $inputData (a collection of the text in $fieldsToSanitize). All that's left is to do the replacements across
     # those fields.
 
-    ForEach($rule in $sanitizedTextRules) {
+    Write-Verbose "Looping over rules to replace text"
+
+    ForEach($replRule in $sanitizedTextRules) {
         ForEach($field in $fieldsToSanitize) {
-            Write-Verbose "... Replacing '$($rule.OriginalText)' with '$($rule.ReplacementText)' in field '$field'"
+            Write-Verbose "... Replacing '$($replRule.OriginalText)' with '$($replRule.ReplacementText)' in field '$field'"
             $log.logData.ForEach{
-                $_.$field = $_.$field -replace [regex]::Escape($rule.OriginalText),$rule.ReplacementText
+                $_.$field = $_.$field -replace [regex]::Escape($replRule.OriginalText),$replRule.ReplacementText
             }
         }
 
         # Add this rule to our sanitized array for output.  We only need this once regardless of how many fields.
         $log.SanitizedReplacements.Add(
             [PSCustomObject]@{
-                OriginalText = $rule.OriginalText
-                ReplacementText = $rule.ReplacementText
+                OriginalText = $replRule.OriginalText
+                ReplacementText = $replRule.ReplacementText
             }
         ) | Out-Null
         ### TODO: We can probably just add the SanitizedRules here instead of building this out in the loop.
     }
+    Write-Verbose "Done Looping over rules to replace text"
 
     Write-Verbose "Function is complete and returning"
     Return $log
