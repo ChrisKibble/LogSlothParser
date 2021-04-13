@@ -438,7 +438,7 @@ Function Import-LogSlothSanitized {
 
     ForEach($field in $fieldsToSanitize) {
         [string]$text = $($log.logData | Select-Object -ExpandProperty $field) -join "`r`n"
-        $inputData = -join($inputData,$text)
+        $inputData = -join($inputData,$text,"`r`n")
     }
     
     # ReplacementList contains a list of regex rules that need to be run
@@ -461,11 +461,6 @@ Function Import-LogSlothSanitized {
     # those fields.
 
     Write-Verbose "Looping over rules to replace text"
-
-    $sanitizedTextRules.ForEach{
-        Write-Verbose "$(Get-Date) $($_.OriginalText)"
-    }
-    break
 
     ForEach($replRule in $sanitizedTextRules) {
         ForEach($field in $fieldsToSanitize) {
