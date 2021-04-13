@@ -34,7 +34,7 @@ Enum SanitizeType {
 Class LogSloth {
     [LogType]$logType = [LogType]::Nothing
     [SanitizeType]$SanitizeType = [SanitizeType]::None
-    [System.Collections.ArrayList]$santizedReplacements = @()
+    [System.Collections.ArrayList]$SanitizedReplacements = @()
     [System.Collections.ArrayList]$logData = @()
 
     [Boolean] IsSanitized() {
@@ -304,11 +304,11 @@ Function Import-LogSlothSanitized {
 
     Try {
         If($logData) { 
-            Write-Verbose "Log Santized calling Import Function for passed Log Data"
+            Write-Verbose "Log Sanitized calling Import Function for passed Log Data"
             [LogSloth]$log = Import-LogSloth -logData $logData -skipWarning -headers $headers
         }
         If($logFile) { 
-            Write-Verbose "Log Santized calling Import Function for passed Log File"
+            Write-Verbose "Log Sanitized calling Import Function for passed Log File"
             [LogSloth]$log = Import-LogSloth -logFile $logFile -skipWarning -headers $headers
         }
     } Catch {
@@ -407,6 +407,8 @@ Function Import-LogSlothSanitized {
         }
     } # // End of Switch (Generic)
 
+    $replacementList.Add([PSCustomObject]@{RegEx="(?ms)(A)"; Stub="$($prefix)X"; Quoted=$false}) | Out-Null
+
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
     
     [System.Collections.ArrayList]$fieldsToSanitize = @()
@@ -430,26 +432,60 @@ Function Import-LogSlothSanitized {
         }
     }
 
+    # Build a big blob of text based on all the fields we have to sanitize.  We do these together so that
+    # we get the same replacement values across all fields in the object.
+
+
+    Write-Verbose "Gathering Data to Sanitize"
+    [string]$inputData = ""
+
+    ForEach($field in $fieldsToSanitize) {
+        Write-Verbose $field
+        [string]$text = $($log.logData | Select-Object -ExpandProperty $field) -join "`r`n"
+        $inputData = -join($inputData,$text)
+    }
+    
     # ReplacementList contains a list of regex rules that need to be run
     # in order to replace data in one or more fields with their sanitized values
-    
+
+    # SantiizedTextRules contains a list of the output of the rules to show that some value 
+    # needs to be replaced with some other value
+    $sanitizedTextRules = [System.Collections.ArrayList]::New(@())
+
     ForEach($itemToReplace in $replacementList) {
-        # Currently only works on 'text' field -- TODO Next: Change to work on all fields defined in $FieldsToSanitize
-        
+        $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
+        if($rule) {
+            $sanitizedTextRules.Add($rule) | Out-Null
+        }
+
         <#
-        ForEach($replacement in $(SanitizeByMatch -inputData $log.LogData.Text -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted)) {
-            Write-Verbose "... Replacing '$($replacement.OriginalText)' with '$($replacement.ReplacementText)'"
-            $log.santizedReplacements.Add(
-                [PSCustomObject]@{
-                    OriginalText = $replacement.OriginalText
-                    ReplacementText = $replacement.ReplacementText
-                }
-            ) | Out-Null
+        ForEach($replacement in $sanitizedTextList) {
             $log.logData.ForEach{ $_.Text = $_.Text -replace [regex]::Escape($replacement.OriginalText),$replacement.ReplacementText }
         }
         #>
     }
 
+    # We now know the text that needs to be replaced ($sanitizedTextRules) and the fields they need to be replaced in ($fieldsToSanitize)
+    # that was based on the $inputData (a collection of the text in $fieldsToSanitize). All that's left is to do the replacements across
+    # those fields.
+
+    ForEach($rule in $sanitizedTextRules) {
+        ForEach($field in $fieldsToSanitize) {
+            Write-Verbose "... Replacing '$($rule.OriginalText)' with '$($rule.ReplacementText)' in field '$field'"
+            $log.logData.ForEach{
+                $_.$field = $_.$field -replace [regex]::Escape($rule.OriginalText),$rule.ReplacementText
+            }
+        }
+
+        # Add this rule to our sanitized array for output.  We only need this once regardless of how many fields.
+        $log.SanitizedReplacements.Add(
+            [PSCustomObject]@{
+                OriginalText = $rule.OriginalText
+                ReplacementText = $rule.ReplacementText
+            }
+        ) | Out-Null
+        ### TODO: We can probably just add the SanitizedRules here instead of building this out in the loop.
+    }
 
     Write-Verbose "Function is complete and returning"
     Return $log
