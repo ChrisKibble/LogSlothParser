@@ -407,8 +407,6 @@ Function Import-LogSlothSanitized {
         }
     } # // End of Switch (Generic)
 
-    $replacementList.Add([PSCustomObject]@{RegEx="(?ms)(A)"; Stub="$($prefix)X"; Quoted=$false}) | Out-Null
-
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
     
     [System.Collections.ArrayList]$fieldsToSanitize = @()
