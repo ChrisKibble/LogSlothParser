@@ -397,7 +397,7 @@ Function Import-LogSlothSanitized {
         { $_ -band [SanitizeType]::ipv4 } {
             # IP Addresses
             Write-Verbose "...... Processing IPv4 Addresses"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))"; Stub="$($prefix)ip"; Quoted=$true}) | Out-Null
+            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))"; Stub="$($prefix)ip"; Quoted=$false}) | Out-Null
         }
         { $_ -band [SanitizeType]::sid } {
             # SID Format
