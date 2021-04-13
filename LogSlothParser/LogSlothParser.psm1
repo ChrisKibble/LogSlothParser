@@ -277,7 +277,7 @@ Function Import-LogSloth {
 Function Import-LogSlothSanitized {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogClass")]
-        [LogSloth]$log,
+        [LogSloth]$LogObject,
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
         [String]$logData,
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
