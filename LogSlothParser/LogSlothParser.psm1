@@ -285,7 +285,6 @@ Function Import-LogSlothSanitized {
             if($_ -match "(?i)^[a-z]+$") { $true } else { throw "You must use only letters A-Z." }
         })]
         [string]$Prefix = "sanitized",
-        [Array]$SanitizeFields = @(),
         [Array]$Headers = @(),
         [switch]$SkipWarning
     )
