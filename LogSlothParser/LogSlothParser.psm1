@@ -35,7 +35,7 @@ Class LogSloth {
     [SanitizeType]$SanitizeType = [SanitizeType]::None
     [System.Collections.ArrayList]$SanitizedReplacements = @()
     [System.Collections.ArrayList]$LogData = @()
-    [String]$LogRawData = $null
+    [String]$LogDataRaw = $null
     
     [Boolean] IsSanitized() {
         Return $($this.SanitizeType -ne [SanitizeType]::None)
@@ -208,7 +208,7 @@ Function Import-LogSloth {
 
     $log = [LogSloth]::New()
 
-    $log.LogRawData = $LogData
+    $log.LogDataRaw = $LogData
 
     Write-Verbose "Getting Log Type using Get-LogSlothType Function"
     $log.logType = Get-LogSlothType -LogData $logData -skipWarning
@@ -302,7 +302,7 @@ Function Import-LogSlothSanitized {
         }
     } elseif ($LogClass) {
         Write-Verbose "LogClass Passed, Capturing Raw Data"
-        $logData = $LogClass.LogRawData
+        $logData = $LogClass.LogDataRaw
     }
 
     Write-Verbose "Getting Log Type"
