@@ -54,23 +54,22 @@ Function SanitizeByMatch {
 
     Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
     $rxLookup = [regex]::new($rx)
-    $matchList = $rxLookup.matches($inputData)
-    $index = 0
-    
-    $replacements = [System.Collections.ArrayList]::New()
 
     Write-Verbose "Getting Matches for Input Data"
-    ForEach($m in $matchList) {
-        $thisMatch = $m.groups[1].Value
-        Write-Verbose "... Found $thisMatch"
-        $replacements.Add($thisMatch) | Out-Null
-    }
+    $matchList = $rxLookup.matches($inputData)
+    
+    Write-Verbose "Reducing to Unique List of Matches"
+    $uniqueMatchList = New-Object -TypeName System.Collections.Generic.HashSet[String]
+    [void]$matchList.ForEach{ $uniqueMatchList.Add($_.Groups[1].Value) }
+
     Write-Verbose "Completed Getting Matches for Input Data"
 
     $replList = [System.Collections.ArrayList]::New()
 
     Write-Verbose "Looping Over Unique Replacement Array to gather list of Text Strings to Replace"
-    ForEach($m in $replacements | Where-Object { $_ -ne "" } | Sort-Object -Unique) {
+    $index = 0
+
+    ForEach($m in $uniqueMatchList | Where-Object { $_ -ne "" }) {
         $index++
         $replText = "$stub$index"
         if($quoted) { $replText = "`"$replText`""}
@@ -278,7 +277,7 @@ Function Import-LogSloth {
 Function Import-LogSlothSanitized {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogClass")]
-        [LogSloth]$log,
+        [LogSloth]$LogObject,
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
         [String]$logData,
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
@@ -294,6 +293,7 @@ Function Import-LogSlothSanitized {
             if($_ -match "(?i)^[a-z]+$") { $true } else { throw "You must use only letters A-Z." }
         })]
         [string]$prefix = "sanitized",
+        [Array]$SanitizeFields = @(),
         [Array]$headers = @(),
         [switch]$skipWarning
     )
@@ -398,7 +398,7 @@ Function Import-LogSlothSanitized {
         { $_ -band [SanitizeType]::ipv4 } {
             # IP Addresses
             Write-Verbose "...... Processing IPv4 Addresses"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"; Stub="false"; Quoted=$true}) | Out-Null
+            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))"; Stub="$($prefix)ip"; Quoted=$false}) | Out-Null
         }
         { $_ -band [SanitizeType]::sid } {
             # SID Format
@@ -407,31 +407,42 @@ Function Import-LogSlothSanitized {
         }
     } # // End of Switch (Generic)
 
-    $replacementList.Add([PSCustomObject]@{RegEx="(?ms)(A)"; Stub="$($prefix)X"; Quoted=$false}) | Out-Null
-
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
     
     [System.Collections.ArrayList]$fieldsToSanitize = @()
-    Switch($log.logType) {
-        "SCCM" {
-            Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM Log)"
-            $fieldsToSanitize.Add("Text") | Out-Null   
-            break
+    
+    If($SanitizeFields.Count -gt 0) {
+        Write-Verbose "Adding User Defined Fields to Sanitize List"
+        $availableFields = $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.Name
+        ForEach($field in $SanitizeFields) {
+            If($field -in $availableFields) {
+                Write-Verbose "Adding Field $field to Sanitize List"
+                $fieldsToSanitize.Add($field)
+            } else {
+                Write-Warning "Selected Field $field is not in input log data ($($availableFields -join ","))"
+            }
         }
-        "SCCM2007" {
-            Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM2007 Log)"
-            $fieldsToSanitize.Add("Text") | Out-Null   
-            break
-        }
-        default {
-            Write-Verbose "Default - Sanitize All Fields"
-            $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
-                Write-Verbose "Adding Field '$($_.Name)' to Fields to Sanitize List"
-                $fieldsToSanitize.Add($_.Name) | Out-Null
+    } else {
+        Switch($log.logType) {
+            "SCCM" {
+                Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM Log)"
+                $fieldsToSanitize.Add("Text") | Out-Null   
+                break
+            }
+            "SCCM2007" {
+                Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM2007 Log)"
+                $fieldsToSanitize.Add("Text") | Out-Null   
+                break
+            }
+            default {
+                Write-Verbose "Default - Sanitize All Fields"
+                $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
+                    Write-Verbose "Adding Field '$($_.Name)' to Sanitize List"
+                    $fieldsToSanitize.Add($_.Name) | Out-Null
+                }
             }
         }
     }
-
     # Build a big blob of text based on all the fields we have to sanitize.  We do these together so that
     # we get the same replacement values across all fields in the object.
 
@@ -440,9 +451,8 @@ Function Import-LogSlothSanitized {
     [string]$inputData = ""
 
     ForEach($field in $fieldsToSanitize) {
-        Write-Verbose $field
         [string]$text = $($log.logData | Select-Object -ExpandProperty $field) -join "`r`n"
-        $inputData = -join($inputData,$text)
+        $inputData = -join($inputData,$text,"`r`n")
     }
     
     # ReplacementList contains a list of regex rules that need to be run
@@ -456,7 +466,11 @@ Function Import-LogSlothSanitized {
     ForEach($itemToReplace in $replacementList) {
         $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
         if($rule) {
+<<<<<<< HEAD
             $sanitizedTextRules.Add($rule) | Out-Null
+=======
+            $sanitizedTextRules.AddRange($rule) | Out-Null
+>>>>>>> cccfbe6a4e77340573e10d3e379333ca069743e0
         }
     }
 
@@ -464,23 +478,26 @@ Function Import-LogSlothSanitized {
     # that was based on the $inputData (a collection of the text in $fieldsToSanitize). All that's left is to do the replacements across
     # those fields.
 
-    ForEach($rule in $sanitizedTextRules) {
+    Write-Verbose "Looping over rules to replace text"
+
+    ForEach($replRule in $sanitizedTextRules) {
         ForEach($field in $fieldsToSanitize) {
-            Write-Verbose "... Replacing '$($rule.OriginalText)' with '$($rule.ReplacementText)' in field '$field'"
+            Write-Verbose "... Replacing '$($replRule.OriginalText)' with '$($replRule.ReplacementText)' in field '$field'"
             $log.logData.ForEach{
-                $_.$field = $_.$field -replace [regex]::Escape($rule.OriginalText),$rule.ReplacementText
+                $_.$field = $_.$field -replace [regex]::Escape($replRule.OriginalText),$replRule.ReplacementText
             }
         }
 
         # Add this rule to our sanitized array for output.  We only need this once regardless of how many fields.
         $log.SanitizedReplacements.Add(
             [PSCustomObject]@{
-                OriginalText = $rule.OriginalText
-                ReplacementText = $rule.ReplacementText
+                OriginalText = $replRule.OriginalText
+                ReplacementText = $replRule.ReplacementText
             }
         ) | Out-Null
         ### TODO: We can probably just add the SanitizedRules here instead of building this out in the loop.
     }
+    Write-Verbose "Done Looping over rules to replace text"
 
     Write-Verbose "Function is complete and returning"
     Return $log
