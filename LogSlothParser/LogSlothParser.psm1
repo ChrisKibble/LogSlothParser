@@ -111,8 +111,8 @@ Function Get-LogSlothType {
     }
 
     Write-Verbose "Initalizing RegEx Checks"
+
     $rxSCCM = [regex]::new('^<!\[LOG')
-    $rxSCCMSimple = [regex]::new('.*?<.*?><.*?><thread=\d{1,} \(.*?\)>')
     $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
 
     Write-Verbose "Using RegEx to Determine Log Type"
@@ -293,24 +293,24 @@ Function Import-LogSlothSanitized {
 
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)" }
 
-    Try {
-        If($logData) { 
-            Write-Verbose "Log Sanitized calling Import Function for passed Log Data"
-            [LogSloth]$log = Import-LogSloth -logData $logData -skipWarning -headers $headers
+    If($logFile) {
+        Try {
+            Write-Verbose "LogFile Parameter Defined, Importing $logFile"
+            $logData = Get-Content $logFile -Raw
+        } Catch {
+            Throw "Error reading $logFile $($_.Exception.Message)"
         }
-        If($logFile) { 
-            Write-Verbose "Log Sanitized calling Import Function for passed Log File"
-            [LogSloth]$log = Import-LogSloth -logFile $logFile -skipWarning -headers $headers
-        }
-    } Catch {
-        Throw "Unable to read log data $($_.Exception.Message)"        
+    } elseif ($LogClass) {
+        Write-Verbose "LogClass Passed, Capturing Raw Data"
+        $logData = $LogClass.LogRawData
     }
 
-    If($log.LogType -eq [LogType]::Nothing) { 
+    Write-Verbose "Getting Log Type"
+    $logType = Get-LogSlothType -LogData $LogData
+
+    If($LogType -eq [LogType]::Nothing) { 
         Throw "Missing LogType"
     }
-
-    $log.SanitizeType = $Sanitize
 
     $replacementList = [System.Collections.ArrayList]::New()
     
@@ -318,7 +318,7 @@ Function Import-LogSlothSanitized {
     
     Write-Verbose "Building Replacements Table for Input Data to Sanitize"
     # -- Configuration Manager Specific --
-    If($log.logType -eq [LogType]::SCCM) {
+    If($logType -eq [LogType]::SCCM) {
         Write-Verbose "... Processing Configuration Manager (CM) Sanitization"
         Switch($sanitize) {
             { $_ -band [SanitizeType]::cmDistributionPoint } {
@@ -404,7 +404,7 @@ Function Import-LogSlothSanitized {
     
     ForEach($rule in $replacementList) {
         $uniqueStringMatches = [System.Collections.Generic.HashSet[string]]::New([StringComparer]::InvariantCultureIgnoreCase)
-        $rxMatches = [regex]::Matches($log.LogRawData, $rule.regex)
+        $rxMatches = [regex]::Matches($LogData, $rule.regex)
         ForEach($m in $rxMatches) {
             $uniqueStringMatches.Add($m.groups[1].value) | Out-Null
         }
@@ -426,18 +426,22 @@ Function Import-LogSlothSanitized {
     }
 
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
+    
     ForEach($replacement in $replacementArray) {
-        $log.LogRawData = $log.LogRawData -replace [RegEx]::Escape($replacement.text), $replacement.Replace
+        $logData = $LogData -replace [RegEx]::Escape($replacement.text), $replacement.Replace
     }
 
-    Write-Verbose "Calling Import-LogSloth to Reformat Data"
-    $log = Import-LogSloth -LogData $log.LogRawData -SkipWarning
+    Write-Verbose "Calling Import-LogSloth to Format Data Properly"
+    $log = Import-LogSloth -LogData $LogData -SkipWarning
+
+    Write-Verbose $Sanitize
+    $log.SanitizeType = $Sanitize
+    $log.SanitizedReplacements = $replacementArray
 
     Write-Verbose "Function is complete and returning"
     
     Return $log
 }
-
 
 Function Import-LogSCCM {
     
@@ -517,4 +521,5 @@ Function Import-LogW3CExtended {
 
     Return $oLog
 }
+
 Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType
