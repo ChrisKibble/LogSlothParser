@@ -34,8 +34,9 @@ Class LogSloth {
     [LogType]$logType = [LogType]::Nothing
     [SanitizeType]$SanitizeType = [SanitizeType]::None
     [System.Collections.ArrayList]$SanitizedReplacements = @()
-    [System.Collections.ArrayList]$logData = @()
-
+    [System.Collections.ArrayList]$LogData = @()
+    [String]$LogRawData = $null
+    
     [Boolean] IsSanitized() {
         Return $($this.SanitizeType -ne [SanitizeType]::None)
     }
@@ -206,6 +207,9 @@ Function Import-LogSloth {
     }
 
     $log = [LogSloth]::New()
+
+
+    $log.LogRawData = $LogData
 
     Write-Verbose "Getting Log Type using Get-LogSlothType Function"
     $log.logType = Get-LogSlothType -LogData $logData -skipWarning
