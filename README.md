@@ -83,7 +83,7 @@ The following public enums are used by this module and can be used by the callin
 
 ## LogType
 
-Contains the values SCCM, CSV, TSV, ColonSV, and NOTHING.  Used to denote the type of log a file is that has been imported.
+Contains the values SCCM, CSV, TSV, ColonSV, W3CExtended, and NOTHING.  Used to denote the type of log a file is that has been imported.
 
 ## SanitizeType (Flags)
 
