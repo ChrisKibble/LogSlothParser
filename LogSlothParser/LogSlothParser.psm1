@@ -31,7 +31,7 @@ Enum SanitizeType {
 }
 
 Class LogSloth {
-    [LogType]$logType = [LogType]::Nothing
+    [LogType]$LogType = [LogType]::Nothing
     [SanitizeType]$SanitizeType = [SanitizeType]::None
     [System.Collections.ArrayList]$SanitizedReplacements = @()
     [System.Collections.ArrayList]$LogData = @()
