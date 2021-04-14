@@ -347,7 +347,7 @@ Function Import-LogSlothSanitized {
             { $_ -band [SanitizeType]::cmProgramId } {
                 # Program Names by "Program:'xxx'>"
                 Write-Verbose "...... Processing CM Program IDs"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Program:(?: |)(.*?)[\b|\]|,]"; Stub="$($prefix)pgrm"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Program:(?: |)(.*?)(?:[\b|\]|,]| \w+ with exit code)"; Stub="$($prefix)prgm"; Quoted=$false}) | Out-Null
             }
             { $_ -band [SanitizeType]::cmMachineName } {
                 # Computer Names by "Machine Name = 'xxx'"
@@ -398,58 +398,43 @@ Function Import-LogSlothSanitized {
         }
     } # // End of Switch (Generic)
 
+    Write-Verbose "Building List of Data to Sanitize"
+    
+    $replacementArray = [System.Collections.ArrayList]::New()
+    
+    ForEach($rule in $replacementList) {
+        $uniqueStringMatches = [System.Collections.Generic.HashSet[string]]::New([StringComparer]::InvariantCultureIgnoreCase)
+        $rxMatches = [regex]::Matches($log.LogRawData, $rule.regex)
+        ForEach($m in $rxMatches) {
+            $uniqueStringMatches.Add($m.groups[1].value) | Out-Null
+        }
+        
+        $index = 0
+        ForEach($find in $uniqueStringMatches) {
+            $index++
+            $replace = "$($rule.Stub)$index"
+            if($rule.Quoted) { 
+                $replace = "`"$replace`""
+            }
+            $replacementArray.Add(
+                [PSCustomObject]@{
+                    Text = $find
+                    Replace = $replace
+                }
+            )
+        }
+    }
+
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
-     
-    
-    Write-Verbose "Gathering Data to Sanitize"
-    [string]$inputData = ""
-
-    ForEach($field in $fieldsToSanitize) {
-        [string]$text = $($log.logData | Select-Object -ExpandProperty $field) -join "`r`n"
-        $inputData = -join($inputData,$text,"`r`n")
-    }
-    
-    # ReplacementList contains a list of regex rules that need to be run
-    # in order to replace data in one or more fields with their sanitized values
-
-    # SantiizedTextRules will contain a list of the output of the rules to show that some value 
-    # needs to be replaced with some other value
-
-    $sanitizedTextRules = [System.Collections.ArrayList]::New(@())
-
-    ForEach($itemToReplace in $replacementList) {
-        $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
-        if($rule) {
-            $sanitizedTextRules.Add($rule) | Out-Null
-        }
+    ForEach($replacement in $replacementArray) {
+        $log.LogRawData = $log.LogRawData -replace [RegEx]::Escape($replacement.text), $replacement.Replace
     }
 
-    # We now know the text that needs to be replaced ($sanitizedTextRules) and the fields they need to be replaced in ($fieldsToSanitize)
-    # that was based on the $inputData (a collection of the text in $fieldsToSanitize). All that's left is to do the replacements across
-    # those fields.
-
-    Write-Verbose "Looping over rules to replace text"
-
-    ForEach($replRule in $sanitizedTextRules) {
-        ForEach($field in $fieldsToSanitize) {
-            Write-Verbose "... Replacing '$($replRule.OriginalText)' with '$($replRule.ReplacementText)' in field '$field'"
-            $log.logData.ForEach{
-                $_.$field = $_.$field -replace [regex]::Escape($replRule.OriginalText),$replRule.ReplacementText
-            }
-        }
-
-        # Add this rule to our sanitized array for output.  We only need this once regardless of how many fields.
-        $log.SanitizedReplacements.Add(
-            [PSCustomObject]@{
-                OriginalText = $replRule.OriginalText
-                ReplacementText = $replRule.ReplacementText
-            }
-        ) | Out-Null
-        ### TODO: We can probably just add the SanitizedRules here instead of building this out in the loop.
-    }
-    Write-Verbose "Done Looping over rules to replace text"
+    Write-Verbose "Calling Import-LogSloth to Reformat Data"
+    $log = Import-LogSloth -LogData $log.LogRawData -SkipWarning
 
     Write-Verbose "Function is complete and returning"
+    
     Return $log
 }
 
