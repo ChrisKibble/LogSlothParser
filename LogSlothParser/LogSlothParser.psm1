@@ -208,7 +208,6 @@ Function Import-LogSloth {
 
     $log = [LogSloth]::New()
 
-
     $log.LogRawData = $LogData
 
     Write-Verbose "Getting Log Type using Get-LogSlothType Function"
@@ -401,40 +400,8 @@ Function Import-LogSlothSanitized {
     } # // End of Switch (Generic)
 
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
+     
     
-    [System.Collections.ArrayList]$fieldsToSanitize = @()
-    
-    If($SanitizeFields.Count -gt 0) {
-        Write-Verbose "Adding User Defined Fields to Sanitize List"
-        $availableFields = $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.Name
-        ForEach($field in $SanitizeFields) {
-            If($field -in $availableFields) {
-                Write-Verbose "Adding Field $field to Sanitize List"
-                $fieldsToSanitize.Add($field)
-            } else {
-                Write-Warning "Selected Field $field is not in input log data ($($availableFields -join ","))"
-            }
-        }
-    } else {
-        Switch($log.logType) {
-            "SCCM" {
-                Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM Log)"
-                $fieldsToSanitize.Add("Text") | Out-Null   
-                break
-            }
-            default {
-                Write-Verbose "Default - Sanitize All Fields"
-                $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
-                    Write-Verbose "Adding Field '$($_.Name)' to Sanitize List"
-                    $fieldsToSanitize.Add($_.Name) | Out-Null
-                }
-            }
-        }
-    }
-    # Build a big blob of text based on all the fields we have to sanitize.  We do these together so that
-    # we get the same replacement values across all fields in the object.
-
-
     Write-Verbose "Gathering Data to Sanitize"
     [string]$inputData = ""
 
