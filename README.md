@@ -43,14 +43,14 @@ Hash64|Sanitizes 64 character hashes|All Log Files
 IPv4|Sanitizes Valid IPv4 Addresses|All Log Files
 SID|Sanitizes SIDs (Security Identifiers) in `S-1-` Format|All Log Files
 URLHost|Sanitizes the host/domain or URLs|All Log Files
-CMDistributionPoint|Sanitizes CM Distribution Points|SCCM & SCCM2007 Log Files
-CMAdvertisementID|Sanitizes CM Advertisement IDs|SCCM & SCCM2007 Log Files
-CMPackageID|Sanitizes CM Package IDs|SCCM & SCCM2007 Log Files
-CMProgramID|Sanitizes CM Program IDs|SCCM & SCCM2007 Log Files
-CMMachineName|Sanitizes CM Machine Names|SCCM & SCCM2007 Log Files
-CMSiteCode|Sanitizes CM Site Codes|SCCM & SCCM2007 Log Files
-CMADSite|Sanitizes CM Active Directory Site Names|SCCM & SCCM2007 Log Files
-CMAll|Includes all CM Sanitization Rules|SCCM & SCCM2007 Log Files
+CMDistributionPoint|Sanitizes CM Distribution Points|SCCM Log Files
+CMAdvertisementID|Sanitizes CM Advertisement IDs|SCCM Log Files
+CMPackageID|Sanitizes CM Package IDs|SCCM Log Files
+CMProgramID|Sanitizes CM Program IDs|SCCM Log Files
+CMMachineName|Sanitizes CM Machine Names|SCCM Log Files
+CMSiteCode|Sanitizes CM Site Codes|SCCM Log Files
+CMADSite|Sanitizes CM Active Directory Site Names|SCCM Log Files
+CMAll|Includes all CM Sanitization Rules|SCCM Log Files
 
 Notes:
 - When a prefix is not defined, the default prefix 'sanitized' will be used
@@ -83,7 +83,7 @@ The following public enums are used by this module and can be used by the callin
 
 ## LogType
 
-Contains the values SCCM, SCCM2007, CSV, TSV, ColonSV, and NOTHING.  Used to denote the type of log a file is that has been imported.
+Contains the values SCCM, CSV, TSV, ColonSV, and NOTHING.  Used to denote the type of log a file is that has been imported.
 
 ## SanitizeType (Flags)
 

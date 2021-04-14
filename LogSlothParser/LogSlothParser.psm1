@@ -4,7 +4,6 @@ Enum LogType {
     ColonSV
     SCCM
     MECM
-    SCCM2007
     W3CExtended
     Nothing
 }
@@ -123,12 +122,6 @@ Function Get-LogSlothType {
             Return [LogType]::SCCM; break 
         }
         
-        # SCCM Simple
-        { $rxSCCMSimple.IsMatch($logData) } { 
-            Write-Verbose "RegEx Confirmation that Log is SCCM2007.  Returning."
-            Return [LogType]::SCCM2007; break 
-        }
-
         # W3C Extended
         { $rxW3CExtended.IsMatch($logData) } { 
             Write-Verbose "RegEx Confirmation that Log is W3CExtended.  Returning."
@@ -228,10 +221,6 @@ Function Import-LogSloth {
             Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
             [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData 
         }
-        "SCCM2007" { 
-            Write-Verbose "Importing SCCM Log using Import-LogSCCM2007 Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCM2007 -logData $logData 
-        }
         "W3CExtended" {
             Write-Verbose "Importing W3C Extended Log using Import-LogW3CExtended Private Function"
             [System.Collections.ArrayList]$oLog = Import-LogW3CExtended -logData $logData
@@ -327,7 +316,7 @@ Function Import-LogSlothSanitized {
     
     Write-Verbose "Building Replacements Table for Input Data to Sanitize"
     # -- Configuration Manager Specific --
-    If($log.logType -in ([LogType]::SCCM,[LogType]::SCCM2007)) {
+    If($log.logType -eq [LogType]::SCCM) {
         Write-Verbose "... Processing Configuration Manager (CM) Sanitization"
         Switch($sanitize) {
             { $_ -band [SanitizeType]::cmDistributionPoint } {
@@ -429,11 +418,6 @@ Function Import-LogSlothSanitized {
                 $fieldsToSanitize.Add("Text") | Out-Null   
                 break
             }
-            "SCCM2007" {
-                Write-Verbose "Adding Fields to Sanitize to be only 'Text' (SCCM2007 Log)"
-                $fieldsToSanitize.Add("Text") | Out-Null   
-                break
-            }
             default {
                 Write-Verbose "Default - Sanitize All Fields"
                 $log.logdata[0].PSObject.Members.where{$_.MemberType -eq "NoteProperty"}.ForEach{
@@ -466,11 +450,7 @@ Function Import-LogSlothSanitized {
     ForEach($itemToReplace in $replacementList) {
         $rule = SanitizeByMatch -inputData $inputData -rx $itemToReplace.regex -stub $itemToReplace.Stub -quoted:$itemToReplace.quoted
         if($rule) {
-<<<<<<< HEAD
             $sanitizedTextRules.Add($rule) | Out-Null
-=======
-            $sanitizedTextRules.AddRange($rule) | Out-Null
->>>>>>> cccfbe6a4e77340573e10d3e379333ca069743e0
         }
     }
 
@@ -560,50 +540,6 @@ Function Import-LogSCCM {
     Write-Verbose "Function returning Log Array"
     Return $logArray
 
-}
-
-Function Import-LogSCCM2007 {
-    
-    [CmdLetBinding()]
-    Param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $logData
-    )
-
-    Write-Verbose "Private Import-LogSCCM2007 Function is beginning"
-
-    $cmLogData = $logData -split "`r`n" | Where-Object { $_ -ne "" -and $_ -notin ("ROLLOVER")}
-
-    $logArray = [System.Collections.ArrayList]::New()
-
-    Write-Verbose "Building RegEx Variables"
-    $rxLogData = [regex]::New('(.*?) \$\$<(.*?)><(.*?)><thread=(.*?)>')
-    
-    Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
-    ForEach($item in $cmLogData) {
-        
-        $oLogLine = New-Object -TypeName PSCustomObject
-        
-        # Get Log Text
-        $logText = $rxLogData.Match($item)
-        
-        if($logText.Success) {
-            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $logText.Groups[1].Value
-            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Component -Value $logText.Groups[2].Value
-            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name DateTime -Value $logText.Groups[3].Value
-            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Thread  -Value $logText.Groups[4].Value
-            $logArray.add($oLogLine) | Out-Null
-        } else {
-            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $item
-            $logArray.add($oLogLine) | Out-Null
-        }
-    }
-
-    Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
-    Write-Verbose "Function returning Log Array"
-
-    Return $logArray
 }
 
 Function Import-LogW3CExtended {
