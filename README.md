@@ -76,6 +76,8 @@ LogType|Enum|The type of log that was detected (see `LogType` in the Enums secti
 SanitizeType|Enum|One or more sanitization rules used
 SanitizedReplacements|ArrayList|Text replaced and what it was replaced with
 LogData|ArrayList|The content of the log imported
+LogDataRaw|String|The original unformatted (potentially sanitized) input
+LogDataUnsanitized|String|The original unformatted and unsanitized input (only when data is sanitized)
 
 # LogSloth Enums
 

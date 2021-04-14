@@ -35,6 +35,7 @@ Class LogSloth {
     [SanitizeType]$SanitizeType = [SanitizeType]::None
     [System.Collections.ArrayList]$SanitizedReplacements = @()
     [System.Collections.ArrayList]$LogData = @()
+    [String]$LogDataUnsanitized = $null
     [String]$LogDataRaw = $null
     
     [Boolean] IsSanitized() {
@@ -312,6 +313,8 @@ Function Import-LogSlothSanitized {
         Throw "Missing LogType"
     }
 
+    $LogDataUnsanitized = $LogData
+
     $replacementList = [System.Collections.ArrayList]::New()
     
     # Build Replacements Table
@@ -434,10 +437,11 @@ Function Import-LogSlothSanitized {
     Write-Verbose "Calling Import-LogSloth to Format Data Properly"
     $log = Import-LogSloth -LogData $LogData -SkipWarning
 
-    Write-Verbose $Sanitize
+    Write-Verbose "Writing Sanitization Metadata to Log Class"
     $log.SanitizeType = $Sanitize
     $log.SanitizedReplacements = $replacementArray
-
+    $log.LogDataUnsanitized = $LogDataUnsanitized
+    
     Write-Verbose "Function is complete and returning"
     
     Return $log
