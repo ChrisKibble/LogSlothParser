@@ -91,10 +91,10 @@ Function Get-LogSlothType {
     [Cmdletbinding()]
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$logData,
+        [String]$LogData,
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$logFile,
-        [switch]$skipWarning
+        [System.IO.FileInfo]$LogFile,
+        [switch]$SkipWarning
     )
 
     Write-Verbose "Get-LogSlothType Function is beginning"
@@ -186,11 +186,11 @@ Function Import-LogSloth {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$logData,
+        [String]$LogData,
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$logFile,
-        [Array]$headers = @(),
-        [switch]$skipWarning
+        [System.IO.FileInfo]$LogFile,
+        [Array]$Headers = @(),
+        [switch]$SkipWarning
     )
 
     Write-Verbose "Import-LogSloth Function is beginning"
@@ -268,9 +268,9 @@ Function Import-LogSlothSanitized {
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogClass")]
         [LogSloth]$LogObject,
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$logData,
+        [String]$LogData,
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$logFile,
+        [System.IO.FileInfo]$LogFile,
         [Parameter(Mandatory=$false, ParameterSetName = "LogClass")]
         [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
         [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
@@ -281,10 +281,10 @@ Function Import-LogSlothSanitized {
         [ValidateScript({
             if($_ -match "(?i)^[a-z]+$") { $true } else { throw "You must use only letters A-Z." }
         })]
-        [string]$prefix = "sanitized",
+        [string]$Prefix = "sanitized",
         [Array]$SanitizeFields = @(),
-        [Array]$headers = @(),
-        [switch]$skipWarning
+        [Array]$Headers = @(),
+        [switch]$SkipWarning
     )
 
     Write-Verbose "Import-LogSlothSanitized Function is beginning"
@@ -490,7 +490,7 @@ Function Import-LogSCCM {
     Param(
         [Parameter(Mandatory=$true)]
         [string]
-        $logData
+        $LogData
     )
 
     Write-Verbose "Private Import-LogSCCM Function is beginning"
@@ -548,7 +548,7 @@ Function Import-LogW3CExtended {
     Param(
         [Parameter(Mandatory=$true)]
         [string]
-        $logData
+        $LogData
     )
 
     Write-Verbose "Private Import-LogW3CExtended Function is beginning"
