@@ -448,8 +448,9 @@ Function Import-LogSlothSanitized {
     # ReplacementList contains a list of regex rules that need to be run
     # in order to replace data in one or more fields with their sanitized values
 
-    # SantiizedTextRules contains a list of the output of the rules to show that some value 
+    # SantiizedTextRules will contain a list of the output of the rules to show that some value 
     # needs to be replaced with some other value
+
     $sanitizedTextRules = [System.Collections.ArrayList]::New(@())
 
     ForEach($itemToReplace in $replacementList) {
@@ -457,12 +458,6 @@ Function Import-LogSlothSanitized {
         if($rule) {
             $sanitizedTextRules.Add($rule) | Out-Null
         }
-
-        <#
-        ForEach($replacement in $sanitizedTextList) {
-            $log.logData.ForEach{ $_.Text = $_.Text -replace [regex]::Escape($replacement.OriginalText),$replacement.ReplacementText }
-        }
-        #>
     }
 
     # We now know the text that needs to be replaced ($sanitizedTextRules) and the fields they need to be replaced in ($fieldsToSanitize)
