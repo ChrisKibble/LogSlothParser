@@ -360,7 +360,7 @@ Function Import-LogSlothSanitized {
                 #Package IDs by "Package:#"
                 Write-Verbose "...... Processing CM Package IDs"
                 $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Package:(?: |)([A-Z]{1,3}[0-9A-F]{5,}\b)"; Stub="$($prefix)pkgid"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Download started for content ([A-Z]{1,3}[0-9]{5,})"; Stub="$($prefix)pkgid"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Download started for content ([A-Z]{1,3}[0-9]{5,})"; Stub="$($prefix)pkgiddl"; Quoted=$false}) | Out-Null
             }
             { $_ -band [SanitizeType]::cmProgramId } {
                 # Program Names by "Program:'xxx'>"
@@ -375,7 +375,9 @@ Function Import-LogSlothSanitized {
             { $_ -band [SanitizeType]::cmSiteCode} {
                 # Site Code in Quotes
                 Write-Verbose "...... Processing CM Site Codes"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)SiteCode(?: |)=(?: |)`"([A-Z0-9]{1,3})`""; Stub="$($prefix)sitecode"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)SiteCode(?: |)=(?: |)`"([A-Z0-9]{1,3})`""; Stub="$($prefix)sitecodeA"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Site Code -> ([A-Z0-9]{1,3})"; Stub="$($prefix)sitecodeB"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )SITE=(.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvC"; Quoted=$false}) | Out-Null
             }
             { $_ -band [SanitizeType]::cmADSite} {
                 # AD Site Name
@@ -385,7 +387,12 @@ Function Import-LogSlothSanitized {
             { $_ -band [SanitizeType]::cmServerName} {
                 # CM SQL Server Name
                 Write-Verbose "...... Processing CM Server Names"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)sqlServerName(?: |)=(?: |)(.*?)(?:,| |\])"; Stub="$($prefix)cmsrv"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)sqlServerName(?: |)=(?: |)(.*?)(?:,| |\])"; Stub="$($prefix)cmsrvA"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Server Name: (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvB"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Setting Site Server -> (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvC"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )SYS=(.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvD"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )Server: (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvE"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )MP: (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvF"; Quoted=$false}) | Out-Null
             }
             { $_ -band [SanitizeType]::cmDatabaseName} {
                 # CM Database Name
