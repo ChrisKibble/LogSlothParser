@@ -209,6 +209,8 @@ Function Import-LogSloth {
 
     $log = [LogSloth]::New()
 
+    $logData = $logData.Trim()
+
     $log.LogDataRaw = $LogData
 
     Write-Verbose "Getting Log Type using Get-LogSlothType Function"
