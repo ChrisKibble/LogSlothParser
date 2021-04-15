@@ -3,6 +3,7 @@ Enum LogType {
     TSV
     ColonSV
     SCCM
+    SCCMSimple
     MECM
     W3CExtended
     Nothing
@@ -114,6 +115,7 @@ Function Get-LogSlothType {
     Write-Verbose "Initalizing RegEx Checks"
 
     $rxSCCM = [regex]::new('^<!\[LOG')
+    $rxSCCMSimple = [regex]::new('(?msi)^.*?  \$\$<.*?><.*?>$')
     $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
 
     Write-Verbose "Using RegEx to Determine Log Type"
@@ -122,6 +124,12 @@ Function Get-LogSlothType {
         { $rxSCCM.IsMatch($logData)  } { 
             Write-Verbose "RegEx Confirmation that Log is SCCM.  Returning."
             Return [LogType]::SCCM; break 
+        }
+
+        # SCCM Simple
+        { $rxSCCMSimple.IsMatch($logData) } {
+            Write-Verbose "RegEx Confirmation that Log is SCCM Simple.  Returning."
+            Return [LogType]::SCCMSimple; break
         }
         
         # W3C Extended
@@ -227,6 +235,10 @@ Function Import-LogSloth {
             Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
             [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData 
         }
+        "SCCMSimple" {
+            Write-Verbose "Importing SCCM Simple Log using Import-LogSCCMSimple Private Function"
+            [System.Collections.ArrayList]$oLog = Import-LogSCCMSimple -logData $logData 
+        }
         "W3CExtended" {
             Write-Verbose "Importing W3C Extended Log using Import-LogW3CExtended Private Function"
             [System.Collections.ArrayList]$oLog = Import-LogW3CExtended -logData $logData
@@ -323,7 +335,7 @@ Function Import-LogSlothSanitized {
     
     Write-Verbose "Building Replacements Table for Input Data to Sanitize"
     # -- Configuration Manager Specific --
-    If($logType -eq [LogType]::SCCM) {
+    If($logType -eq [LogType]::SCCM -or $logType -eq [LogType]::SCCMSimple) {
         Write-Verbose "... Processing Configuration Manager (CM) Sanitization"
         Switch($sanitize) {
             { $_ -band [SanitizeType]::cmDistributionPoint } {
@@ -504,6 +516,49 @@ Function Import-LogSCCM {
 
 }
 
+Function Import-LogSCCMSimple {
+    
+    [CmdLetBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $LogData
+    )
+
+    Write-Verbose "Private Import-LogSCCMSimple Function is beginning"
+    $cmLogData = $logData -split "`r`n" | Where-Object { $_ -ne "" -and $_ -notin ("ROLLOVER")}
+    
+    $logArray = [System.Collections.ArrayList]::New()
+
+    Write-Verbose "Building RegEx Variables"
+    $rxLogData = [regex]::New('(.*?) \$\$<(.*?)><(.*?)><thread=(.*?)>')
+
+    Write-Verbose "Looping over Lines in Log Data and building custom object"
+    ForEach($item in $cmLogData) {
+        
+        $oLogLine = New-Object -TypeName PSCustomObject
+        
+        # Get Log Text
+        $logText = $rxLogData.Match($item)
+        
+        if($logText.Success) {
+            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $logText.Groups[1].Value
+            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Component -Value $logText.Groups[2].Value
+            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name DateTime -Value $logText.Groups[3].Value
+            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Thread  -Value $logText.Groups[4].Value
+            $logArray.add($oLogLine) | Out-Null
+        } else {
+            Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $item
+            $logArray.add($oLogLine) | Out-Null
+        }
+    }
+
+    Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
+    Write-Verbose "Function returning Log Array"
+    
+    Return $logArray
+
+}
 Function Import-LogW3CExtended {
     
     [CmdLetBinding()]
