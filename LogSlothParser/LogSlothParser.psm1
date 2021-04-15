@@ -307,7 +307,7 @@ Function Import-LogSlothSanitized {
     }
 
     Write-Verbose "Getting Log Type"
-    $logType = Get-LogSlothType -LogData $LogData
+    $logType = Get-LogSlothType -LogData $LogData -SkipWarning
 
     If($LogType -eq [LogType]::Nothing) { 
         Throw "Missing LogType"
@@ -424,7 +424,7 @@ Function Import-LogSlothSanitized {
                     Text = $find
                     Replace = $replace
                 }
-            )
+            ) | Out-Nul 
         }
     }
 
