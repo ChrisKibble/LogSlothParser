@@ -26,7 +26,9 @@ Enum SanitizeType {
     cmMachineName = 512
     cmSiteCode = 1024
     cmADSite = 2048
-    cmAll = 4064
+    cmServerName = 4096
+    cmDatabaseName = 8192
+    cmAll = 16352
 
     all = 2147483647
 }
@@ -114,20 +116,22 @@ Function Get-LogSlothType {
 
     Write-Verbose "Initalizing RegEx Checks"
 
-    $rxSCCM = [regex]::new('^<!\[LOG')
-    $rxSCCMSimple = [regex]::new('(?msi)^.*?  \$\$<.*?><.*?>$')
+    $rxSCCM = [regex]::new('<!\[LOG')
+    $rxSCCMSimple = [regex]::new('(?msi).*?  \$\$<.*?><.*?>')
     $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
+
+    $firstLineOfData = $($logData -split "`n") | Select -First 1
 
     Write-Verbose "Using RegEx to Determine Log Type"
     Switch ($logData) {
         # SCCM
-        { $rxSCCM.IsMatch($logData)  } { 
+        { $rxSCCM.IsMatch($firstLineOfData)  } { 
             Write-Verbose "RegEx Confirmation that Log is SCCM.  Returning."
             Return [LogType]::SCCM; break 
         }
 
         # SCCM Simple
-        { $rxSCCMSimple.IsMatch($logData) } {
+        { $rxSCCMSimple.IsMatch($firstLineOfData) } {
             Write-Verbose "RegEx Confirmation that Log is SCCM Simple.  Returning."
             Return [LogType]::SCCMSimple; break
         }
@@ -378,7 +382,16 @@ Function Import-LogSlothSanitized {
                 Write-Verbose "...... Processing CM AD Sites"
                 $replacementList.Add([PSCustomObject]@{RegEx="(?msi)<ADSite(?:.*?)Name=`"(.*?)`"\/>"; Stub="$($prefix)adsite"; Quoted=$false}) | Out-Null
             }
-
+            { $_ -band [SanitizeType]::cmServerName} {
+                # CM SQL Server Name
+                Write-Verbose "...... Processing CM Server Names"
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)sqlServerName(?: |)=(?: |)(.*?)(?:,| |\])"; Stub="$($prefix)cmsrv"; Quoted=$false}) | Out-Null
+            }
+            { $_ -band [SanitizeType]::cmDatabaseName} {
+                # CM Database Name
+                Write-Verbose "...... Processing CM Database Names"
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)databaseName(?: |)=(?: |)(.*?)(?:,| |\]|\.)"; Stub="$($prefix)cmdb"; Quoted=$false}) | Out-Null
+            }
         } # // End of Switch
     } # // End of Log Type SCCM
 
