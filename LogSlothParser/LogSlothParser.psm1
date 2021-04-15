@@ -342,10 +342,7 @@ Function Import-LogSlothSanitized {
                 #Package IDs by "Package:#"
                 Write-Verbose "...... Processing CM Package IDs"
                 $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Package:(?: |)([A-Z]{1,3}[0-9A-F]{5,}\b)"; Stub="$($prefix)pkgid"; Quoted=$false}) | Out-Null
-
-                #Package IDs by Download
-                Write-Verbose "...... Processing CM Advertisement IDs (by Download Content Messages)"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Download started for content ([A-Z]{1,3}[0-9]{5,})"; Stub="$($prefix)pkgdlid"; Quoted=$false}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Download started for content ([A-Z]{1,3}[0-9]{5,})"; Stub="$($prefix)pkgid"; Quoted=$false}) | Out-Null
             }
             { $_ -band [SanitizeType]::cmProgramId } {
                 # Program Names by "Program:'xxx'>"
@@ -360,7 +357,7 @@ Function Import-LogSlothSanitized {
             { $_ -band [SanitizeType]::cmSiteCode} {
                 # Site Code in Quotes
                 Write-Verbose "...... Processing CM Site Codes"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)SiteCode=(`"[A-Z0-9]{1,3}`")"; Stub="$($prefix)sitecode"; Quoted=$true}) | Out-Null
+                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)SiteCode(?: |)=(?: |)`"([A-Z0-9]{1,3})`""; Stub="$($prefix)sitecode"; Quoted=$false}) | Out-Null
             }
             { $_ -band [SanitizeType]::cmADSite} {
                 # AD Site Name
