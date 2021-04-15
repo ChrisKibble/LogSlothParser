@@ -424,7 +424,7 @@ Function Import-LogSlothSanitized {
                     Text = $find
                     Replace = $replace
                 }
-            ) | Out-Nul 
+            ) | Out-Null
         }
     }
 
