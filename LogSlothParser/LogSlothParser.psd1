@@ -69,7 +69,7 @@ PowerShellVersion = '5.1'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = '*'
+FunctionsToExport = @('Import-LogSloth','Import-LogSlothSanitized','Get-LogSlothType')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -101,7 +101,7 @@ PrivateData = @{
         LicenseUri = 'https://github.com/ChrisKibble/LogSlothParser/blob/main/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        # ProjectUri = 'https://github.com/ChrisKibble/LogSlothParser'
 
         # A URL to an icon representing this module.
         # IconUri = ''
