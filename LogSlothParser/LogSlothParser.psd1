@@ -30,7 +30,7 @@ CompanyName = 'Chris Kibble'
 Copyright = '(C) 2021 - Chris Kibble. All rights reserved.'
 
 # Description of the functionality provided by this module
-# Description = ''
+Description = 'LogSlothParser imports a variety of log file types and converts it into an easily parsable array of objects.'
 
 # Minimum version of the PowerShell engine required by this module
 PowerShellVersion = '5.1'
