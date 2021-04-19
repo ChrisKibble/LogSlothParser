@@ -1,9 +1,9 @@
-Describe "Ensure MEMCM Log Files Import Successfully" {
+$logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse | Select-Object -ExpandProperty FullName
+$logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
-    $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse | Select-Object -ExpandProperty FullName
+Describe "Ensure MEMCM Log Files Import Successfully" {
     
     # Unnecessary but makes for easier reading in detailed output
-    $logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
     It "Pre-Import Verification on <_>" -TestCases $logFiles {  
         
