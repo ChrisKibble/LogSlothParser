@@ -117,10 +117,10 @@ Function Get-LogSlothType {
     Write-Verbose "Initalizing RegEx Checks"
 
     $rxSCCM = [regex]::new('<!\[LOG')
-    $rxSCCMSimple = [regex]::new('(?msi).*?  \$\$<.*?><.*?>')
+    $rxSCCMSimple = [regex]::new('(?msi).*? \$\$<.*?><.*?>')
     $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
 
-    $firstLineOfData = $($logData -split "`n") | Select-Object -First 1
+    $firstLineOfData = $($logData -split "`n") | Where-Object { $_ -notlike "ROLLOVER*" } | Select-Object -First 1
 
     Write-Verbose "Using RegEx to Determine Log Type"
     Switch ($logData) {
@@ -220,7 +220,7 @@ Function Import-LogSloth {
     $log = [LogSloth]::New()
 
     $logData = $logData.Trim()
-
+    
     $log.LogDataRaw = $LogData
 
     Write-Verbose "Getting Log Type using Get-LogSlothType Function"
@@ -547,6 +547,7 @@ Function Import-LogSCCMSimple {
     )
 
     Write-Verbose "Private Import-LogSCCMSimple Function is beginning"
+    
     $cmLogData = $logData -split "`r`n" | Where-Object { $_ -ne "" -and $_ -notin ("ROLLOVER")}
     
     $logArray = [System.Collections.ArrayList]::New()
