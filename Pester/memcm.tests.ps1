@@ -1,12 +1,16 @@
 Describe "Ensure MEMCM Log Files Import Successfully" {
 
-    $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse
+    $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse | Select-Object -ExpandProperty FullName
+    
+    # Unnecessary but makes for easier reading in detailed output
+    $logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
-    It "Pre-Import Verification on <_.FullName>" -TestCases $logFiles {  
+    It "Pre-Import Verification on <_>" -TestCases $logFiles {  
+        
         $rxValidCM = [regex]::New('(?msi)^<!\[LOG\[(?:.*?)]LOG]!><time="(?:.*?)" date="(?:.*?)" component="(?:.*?)" context="(?:.*?)" type="(?:.*?)" thread="(?:.*?)" file="(?:.*?)">$')    
         $rxValidCMSimple = [regex]::New('(.*?) \$\$<(.*?)><(.*?)><thread=(.*?)>')
 
-        $logContent = Get-Content $_.FullName -Raw
+        $logContent = Get-Content $_ -Raw
 
         # Fixes issue with extra new line characters when CM is importing an error into the log
         If($logContent -like '<!`[LOG`[*') {
