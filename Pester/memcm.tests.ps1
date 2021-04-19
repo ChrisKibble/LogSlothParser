@@ -32,4 +32,9 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
 
         $bValidCMLog | Should -Be $true
     }
+
+    It "Import and Sanitization Test on <_>" -TestCases $logFiles {
+        $log = Import-LogSloth -LogFile $_ -SkipWarning
+        $log | Should -Be $true
+    }
 }
