@@ -144,8 +144,6 @@ Function Get-LogSlothType {
 
     }
 
-    # Check for W3C Extended by looking at first line of log
-
     # Not a pre-defined type, let's make some best guesses
     Try {
         Write-Verbose "Converting Log Data to CSV"
