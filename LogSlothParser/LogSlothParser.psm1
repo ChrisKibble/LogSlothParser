@@ -598,4 +598,5 @@ Function Import-LogW3CExtended {
     Return $oLog
 }
 
+# New changes here should be added to the manifest as well.
 Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType
