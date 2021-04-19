@@ -41,10 +41,7 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
         # Something should be returned
         $log | Should -Be $true
 
-        ForEach($logLine in $log.logData) {
-            # Text should not be empty
-            $logLine.Text | Should -Not -BeNullOrEmpty
-        }
-
+        # Log Type should be SCCM or SCCMSimple
+        $log.LogType | Should -BeIn @("SCCM","SCCMSIMPLE")
     }
 }
