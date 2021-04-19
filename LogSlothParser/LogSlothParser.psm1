@@ -120,7 +120,7 @@ Function Get-LogSlothType {
     $rxSCCMSimple = [regex]::new('(?msi).*?  \$\$<.*?><.*?>')
     $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
 
-    $firstLineOfData = $($logData -split "`n") | Select -First 1
+    $firstLineOfData = $($logData -split "`n") | Select-Object -First 1
 
     Write-Verbose "Using RegEx to Determine Log Type"
     Switch ($logData) {
