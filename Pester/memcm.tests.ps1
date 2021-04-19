@@ -2,8 +2,6 @@ Import-Module $PSScriptRoot\..\LogSlothParser\LogSlothParser.psd1 -Force
 
 $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse | Select-Object -ExpandProperty FullName
 
-$logFiles = $logFiles | Select -First 5
-
 # Unnecessary but makes for easier reading in detailed output
 $logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
