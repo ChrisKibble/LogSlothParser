@@ -487,6 +487,9 @@ Function Import-LogSCCM {
 
     Write-Verbose "Private Import-LogSCCM Function is beginning"
 
+    ## Fixes issue where CM adds unnecessary CRs when dumping data from an error report into a log
+    $logData = $logData -replace '(?<!">)\r\n',"`n"
+
     ## SCCM breaks log files up by CR (\r).  Multiline within a single log line are broken up by NewLine (\n)
     $cmLogData = $logData -split "`r"
 
