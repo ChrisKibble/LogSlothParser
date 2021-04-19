@@ -2,6 +2,8 @@ Import-Module $PSScriptRoot\..\LogSlothParser\LogSlothParser.psd1 -Force
 
 $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse | Select-Object -ExpandProperty FullName
 
+$logFiles = $logFiles | Select -First 5
+
 # Unnecessary but makes for easier reading in detailed output
 $logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
@@ -35,6 +37,14 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
 
     It "Import and Sanitization Test on <_>" -TestCases $logFiles {
         $log = Import-LogSloth -LogFile $_ -SkipWarning
+        
+        # Something should be returned
         $log | Should -Be $true
+
+        ForEach($logLine in $log.logData) {
+            # Text should not be empty
+            $logLine.Text | Should -Not -BeNullOrEmpty
+        }
+
     }
 }
