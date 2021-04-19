@@ -10,7 +10,7 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
         $rxValidCM = [regex]::New('(?msi)^<!\[LOG\[(?:.*?)]LOG]!><time="(?:.*?)" date="(?:.*?)" component="(?:.*?)" context="(?:.*?)" type="(?:.*?)" thread="(?:.*?)" file="(?:.*?)">$')    
         $rxValidCMSimple = [regex]::New('(.*?) \$\$<(.*?)><(.*?)><thread=(.*?)>')
 
-        $logContent = Get-Content $_ -Raw
+        $logContent = Get-Content $_ -Raw | Where-Object { $_ -ne "ROLLOVER"}
 
         # Fixes issue with extra new line characters when CM is importing an error into the log
         If($logContent -like '<!`[LOG`[*') {
