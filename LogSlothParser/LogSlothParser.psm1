@@ -108,7 +108,7 @@ Function Get-LogSlothType {
     If($logFile) {
         Try {
             Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw
+            $logData = Get-Content $logFile -Raw -ErrorAction Stop
         } Catch {
             Throw "Error reading $logFile $($_.Exception.Message)"
         }
@@ -213,9 +213,9 @@ Function Import-LogSloth {
     If($logFile) {
         Try {
             Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw
+            $logData = Get-Content $logFile -Raw -ErrorAction Stop
         } Catch {
-            Throw "Error reading $logFile $($_.Exception.Message)"
+            Throw "Error reading $logFile. $($_.Exception.Message)"
         }
     }
 
@@ -315,7 +315,7 @@ Function Import-LogSlothSanitized {
     If($logFile) {
         Try {
             Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw
+            $logData = Get-Content $logFile -Raw -ErrorAction Stop
         } Catch {
             Throw "Error reading $logFile $($_.Exception.Message)"
         }
