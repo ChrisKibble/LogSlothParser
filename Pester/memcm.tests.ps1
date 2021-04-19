@@ -1,10 +1,12 @@
+Import-Module $PSScriptRoot\..\LogSlothParser\LogSlothParser.psd1 -Force
+
 $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Recurse | Select-Object -ExpandProperty FullName
+
+# Unnecessary but makes for easier reading in detailed output
 $logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
 Describe "Ensure MEMCM Log Files Import Successfully" {
     
-    # Unnecessary but makes for easier reading in detailed output
-
     It "Pre-Import Verification on <_>" -TestCases $logFiles {  
         
         $rxValidCM = [regex]::New('(?msi)^<!\[LOG\[(?:.*?)]LOG]!><time="(?:.*?)" date="(?:.*?)" component="(?:.*?)" context="(?:.*?)" type="(?:.*?)" thread="(?:.*?)" file="(?:.*?)">$')    
