@@ -319,7 +319,7 @@ Function Import-LogSlothSanitized {
         }
     } elseif ($LogObject) {
         Write-Verbose "LogClass Passed, Capturing Raw Data"
-        $logData = $LogClass.LogDataRaw
+        $logData = $LogObject.LogDataRaw
     }
 
     Write-Verbose "Getting Log Type"
