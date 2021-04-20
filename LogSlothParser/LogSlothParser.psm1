@@ -1,7 +1,6 @@
 Enum LogType {
     CSV
     TSV
-    ColonSV
     SCCM
     SCCMSimple
     MECM
@@ -163,15 +162,6 @@ Function Get-LogSlothType {
         $tsv = $null
     }
 
-    Try {
-        Write-Verbose "Converting Log Data to Colon Delimited"
-        $ColonSV = $logData | ConvertFrom-Csv -Delimiter ";"   
-        Write-Verbose "Conversion to Colon Delimited was successful"
-    } Catch {
-        Write-Verbose "Failed to Convert Log to TSV $($_.Exception.Message)"
-        $ColonSV = $null
-    }
-
     if($csv -and $tsv) {
         $csvItems = $csv[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count
         $tsvItems = $tsv[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count
@@ -184,11 +174,6 @@ Function Get-LogSlothType {
         } else {
             Write-Verbose "There is no clear winner between CSV and TSV, cannot select Winner"
         }
-    }
-
-    If($ColonSV[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count -gt 1) {
-        Write-Verbose "There are multiple properties returned with colon separated values, selecting ColonSV as Winner"
-        Return [LogType]::ColonSV
     }
 
     Write-Verbose "Could not find a match, Returning 'Nothing'"
@@ -259,15 +244,6 @@ Function Import-LogSloth {
             $ConvertParams = @{
                 InputObject = $logData
                 Delimiter = "`t"
-            }
-            if($headers) { $ConvertParams.Add("Header",$headers) }
-            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-        }
-        "ColonSV" {
-            Write-Verbose "Importing ColonSV using Built-in PowerShell Function"
-            $ConvertParams = @{
-                InputObject = $logData
-                Delimiter = ";"
             }
             if($headers) { $ConvertParams.Add("Header",$headers) }
             [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
