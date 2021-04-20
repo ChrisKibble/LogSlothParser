@@ -317,7 +317,7 @@ Function Import-LogSlothSanitized {
         } Catch {
             Throw "Error reading $logFile $($_.Exception.Message)"
         }
-    } elseif ($LogClass) {
+    } elseif ($LogObject) {
         Write-Verbose "LogClass Passed, Capturing Raw Data"
         $logData = $LogClass.LogDataRaw
     }
