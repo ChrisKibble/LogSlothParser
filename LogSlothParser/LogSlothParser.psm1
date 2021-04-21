@@ -598,7 +598,19 @@ Function ConvertTo-LogSlothHTML {
 
     [System.Collections.ArrayList]$thead = @()
     [void]$thead.AddRange(@("<thead>","<tr>"))
+    ForEach($prop in $log.LogData[0].psobject.Properties.Name) {
+        [void]$thead.Add("<th>$prop</th>")
+    }
     [void]$thead.AddRange(@("</tr>","</thead>"))
+
+    [System.Collections.ArrayList]$tbody = @()
+    ForEach($entry in $log.LogData) {
+        [void]$tbody.Add("<tr>")
+        ForEach($prop in $log.LogData[0].psobject.Properties.Name) {
+            [void]$tbody.Add("<td>$($entry.$prop)</td>")
+        }    
+        [void]$tbody.Add("<tr>")
+    }
 
     [System.Collections.ArrayList]$html = @()
     [void]$html.AddRange(@("<html>","<head>"))
@@ -608,7 +620,7 @@ Function ConvertTo-LogSlothHTML {
     [void]$html.Add("<body>")
     [void]$html.Add("<table>")
     [void]$html.AddRange($thead)
-
+    [void]$html.AddRange($tbody)
     [void]$html.Add("</table>")
     [void]$html.Add("</body>")
     [void]$html.Add("</html>")
