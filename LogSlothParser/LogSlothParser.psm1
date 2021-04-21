@@ -593,15 +593,20 @@ Function ConvertTo-LogSlothHTML {
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
     [System.Collections.ArrayList]$css = @()
-    [void]$css.AddRange(@("body { font-family: verdana; font-size: 12px; }"))
+    # [void]$css.AddRange(@("body { font-family: verdana; font-size: 12px; }"))
 
     [System.Collections.ArrayList]$links = @()
     [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
 
+    [System.Collections.Specialized.OrderedDictionary]$dataTableOptions = @{}
+    [void]$dataTableOptions.Add("paging", $true)    
+    [void]$dataTableOptions.Add("pagingType","full_numbers")
+    [void]$dataTableOptions.Add("order",@())
+
     [System.Collections.ArrayList]$scripts = @()
     [void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
     [void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>')
-    [void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable(); } );</script>") 
+    [void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable( $($dataTableOptions | ConvertTo-Json) ); } );</script>") 
 
     [System.Collections.ArrayList]$thead = @()
     [void]$thead.AddRange(@("<thead>","<tr>"))
