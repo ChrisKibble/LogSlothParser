@@ -578,8 +578,32 @@ Function Import-LogW3CExtended {
     Return $oLog
 }
 
-Function Export-LogSlothLog {
+Function ConvertTo-LogSlothHTML {
+    Param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [LogSloth]$LogObject
+    )
 
+    Write-Verbose "Export-LogSlothLog Function is beginning"
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
+
+    Write-Verbose "Export-LogSlothLog Function is returning"
+    Return
+}
+
+Function Export-LogSlothLog {
+    Param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1)]
+        [LogSloth]$LogObject,
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=2)]
+        [System.IO.FileInfo]$path
+    )
+
+    Write-Verbose "Export-LogSlothLog Function is beginning"
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
+
+    Write-Verbose "Export-LogSlothLog Function is returning"
+    Return
 }
 
 # New changes here should be added to the manifest as well.
