@@ -611,11 +611,10 @@ Function ConvertTo-LogSlothHTML {
     [void]$thead.AddRange(@("</tr>","</thead>"))
 
     [System.Collections.ArrayList]$tbody = @()
-    ForEach($entry in $log.LogData | Select -First 1) {
+    ForEach($entry in $log.LogData) {
         [void]$tbody.Add("<tr>")
         ForEach($prop in $log.LogData[0].psobject.Properties.Name) {
-            #[void]$tbody.Add("<td>$($entry.$prop)</td>")
-            [void]$tbody.Add("<td>Hi</td>")
+            [void]$tbody.Add("<td>$($entry.$prop)</td>")
         }    
         [void]$tbody.Add("</tr>")
     }
