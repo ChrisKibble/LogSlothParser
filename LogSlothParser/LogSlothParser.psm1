@@ -595,8 +595,13 @@ Function ConvertTo-LogSlothHTML {
     [System.Collections.ArrayList]$css = @()
     [void]$css.AddRange(@("body { font-family: verdana; font-size: 12px; }"))
 
+    [System.Collections.ArrayList]$links = @()
+    [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
+
     [System.Collections.ArrayList]$scripts = @()
     [void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
+    [void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>')
+    [void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable(); } );</script>") 
 
     [System.Collections.ArrayList]$thead = @()
     [void]$thead.AddRange(@("<thead>","<tr>"))
@@ -606,22 +611,25 @@ Function ConvertTo-LogSlothHTML {
     [void]$thead.AddRange(@("</tr>","</thead>"))
 
     [System.Collections.ArrayList]$tbody = @()
-    ForEach($entry in $log.LogData) {
+    ForEach($entry in $log.LogData | Select -First 1) {
         [void]$tbody.Add("<tr>")
         ForEach($prop in $log.LogData[0].psobject.Properties.Name) {
-            [void]$tbody.Add("<td>$($entry.$prop)</td>")
+            #[void]$tbody.Add("<td>$($entry.$prop)</td>")
+            [void]$tbody.Add("<td>Hi</td>")
         }    
-        [void]$tbody.Add("<tr>")
+        [void]$tbody.Add("</tr>")
     }
 
     [System.Collections.ArrayList]$html = @()
-    [void]$html.AddRange(@("<html>","<head>"))
+    [void]$html.Add("<!DOCTYPE html>")
+    [void]$html.AddRange(@("<html lang=`"en`">","<head>"))
     [void]$html.Add("<title>LogSloth Log Export</title>")
+    [void]$html.AddRange($links)
     [void]$html.AddRange($scripts)
     [void]$html.AddRange(@("<style>",$css,"</style>"))
     [void]$html.Add("</head>")
     [void]$html.Add("<body>")
-    [void]$html.Add("<table>")
+    [void]$html.Add('<table id="LogTable">')
     [void]$html.AddRange($thead)
     [void]$html.AddRange($tbody)
     [void]$html.Add("</table>")
@@ -652,7 +660,7 @@ Function Export-LogSlothLog {
     Switch($Format) {
         "HTML" {
             Try {
-                $LogObject | ConvertTo-LogSlothHTML -SkipWarning | Out-File $Path -Force:$force -ErrorAction Stop
+                $LogObject | ConvertTo-LogSlothHTML -SkipWarning | Out-File $Path -Encoding utf8 -Force:$force -ErrorAction Stop
             } Catch {
                 Throw "Unable to export file. $($_.Exeption.Message)"
             }
