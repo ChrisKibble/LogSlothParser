@@ -1,6 +1,8 @@
 Import-Module $PSScriptRoot\..\LogSlothParser\LogSlothParser.psd1 -Force
 
-$csvFile = "$PSScriptRoot\..\LogSamples\CSV\Cities.csv"
+BeforeAll {
+    $csvFile = $(Resolve-Path "$PSScriptRoot\..\LogSamples\CSV\Cities.csv").Path
+}
 
 Describe "Ensure CSV Log Files Import Successfully" {
     
