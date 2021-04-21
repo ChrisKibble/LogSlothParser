@@ -1,10 +1,12 @@
 Import-Module $PSScriptRoot\..\LogSlothParser\LogSlothParser.psd1 -Force
 
-$TSVFile = "$PSScriptRoot\..\LogSamples\TSV\Random.tsv"
-
+BeforeAll {
+    $TSVFile = $(Resolve-Path "$PSScriptRoot\..\LogSamples\TSV\Random.tsv").Path
+}
 Describe "Ensure TSV Log Files Import Successfully" {
     
     It "Validate TSV Import Works as Expected Importing File"  {          
+        Write-Host $TSVFile
         $log = Import-LogSloth -LogFile $TSVFile -SkipWarning
         $log.logData.count | Should -BeExactly 5
         $log.logType | Should -Be "TSV"
