@@ -593,7 +593,8 @@ Function ConvertTo-LogSlothHTML {
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
     [System.Collections.ArrayList]$css = @()
-    # [void]$css.AddRange(@("body { font-family: verdana; font-size: 12px; }"))
+    [void]$css.Add("#LogTable td { font-family: verdana; font-size: 12px; }")
+    [void]$css.Add("#LogTable th { font-family: verdana; font-size: 12px; font-weight: bold; text-align: left; }")
 
     [System.Collections.ArrayList]$links = @()
     [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
@@ -601,6 +602,7 @@ Function ConvertTo-LogSlothHTML {
     [System.Collections.Specialized.OrderedDictionary]$dataTableOptions = @{}
     [void]$dataTableOptions.Add("paging", $true)    
     [void]$dataTableOptions.Add("pagingType","full_numbers")
+    [void]$dataTableOptions.Add("ordering", $false)    
     [void]$dataTableOptions.Add("order",@())
     [void]$dataTableOptions.Add("lengthMenu",@(25, 50, 100, 250, 500, 1000))
     [void]$dataTableOptions.Add("pageLength", 500)
