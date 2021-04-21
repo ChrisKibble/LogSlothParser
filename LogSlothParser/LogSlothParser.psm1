@@ -600,7 +600,7 @@ Function ConvertTo-LogSlothHTML {
     if($IncludeRawLog) {
         [void]$css.Add("#LogRaw { font-family: 'courier new'; font-size: 12px; width: 100%; height: 200px; margin-top: 20px; white-space: nowrap; overflow: auto;")
     }
-    
+
     [System.Collections.ArrayList]$links = @()
     [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
 
@@ -680,9 +680,9 @@ Function Export-LogSlothLog {
     Switch($Format) {
         "HTML" {
             Try {
-                $LogObject | ConvertTo-LogSlothHTML -IncludeRawLog:$includeRawLog -SkipWarning | Out-File $Path -Encoding utf8 -Force:$force -ErrorAction Stop
+                $LogObject | ConvertTo-LogSlothHTML -IncludeRawLog:$includeRawLog -SkipWarning | Out-File $Path -Encoding utf8 -NoClobber:$(-Not $Force) -ErrorAction Stop
             } Catch {
-                Throw "Unable to export file. $($_.Exeption.Message)"
+                Throw "Unable to export file. $($_.Exception.Message)"
             }
         }
     }
