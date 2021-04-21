@@ -500,12 +500,12 @@ Function Import-LogSCCM {
         $logFile = $rxLogFile.Match($item)
 
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $logText.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Time -Value $logTime.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Date -Value $logDate.Groups[1].Value
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Component -Value $logComponent.Groups[1].Value
+        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Date -Value $logDate.Groups[1].Value
+        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Time -Value $logTime.Groups[1].Value
+        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Thread  -Value $logThread.Groups[1].Value
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Context -Value $logContext.Groups[1].Value
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Type -Value $logType.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Thread  -Value $logThread.Groups[1].Value
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name File  -Value $logFile.Groups[1].Value
         
         $logArray.add($oLogLine) | Out-Null
