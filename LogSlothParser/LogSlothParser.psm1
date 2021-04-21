@@ -602,6 +602,8 @@ Function ConvertTo-LogSlothHTML {
     [void]$dataTableOptions.Add("paging", $true)    
     [void]$dataTableOptions.Add("pagingType","full_numbers")
     [void]$dataTableOptions.Add("order",@())
+    [void]$dataTableOptions.Add("lengthMenu",@(25, 50, 100, 250, 500, 1000))
+    [void]$dataTableOptions.Add("pageLength", 500)
 
     [System.Collections.ArrayList]$scripts = @()
     [void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
