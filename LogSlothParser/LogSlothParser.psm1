@@ -8,6 +8,10 @@ Enum LogType {
     Nothing
 }
 
+Enum LogSlothExportType {
+    HTML
+}
+
 [Flags()]
 Enum SanitizeType {
     None = 0
@@ -595,8 +599,10 @@ Function Export-LogSlothLog {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1)]
         [LogSloth]$LogObject,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=2)]
-        [System.IO.FileInfo]$path
+        [Parameter(Mandatory=$true, ValueFromPipeline=$false, Position=2)]
+        [System.IO.FileInfo]$Path,
+        [Parameter(Mandatory=$false, ValueFromPipeline=$false, Position=3)]
+        [LogSlothExportType]$Format = [LogSlothExportType]::HTML
     )
 
     Write-Verbose "Export-LogSlothLog Function is beginning"
