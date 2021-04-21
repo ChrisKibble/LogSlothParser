@@ -593,14 +593,23 @@ Function ConvertTo-LogSlothHTML {
     Write-Verbose "Export-LogSlothLog Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
-    [System.Collections.ArrayList]$html = @()
+    [System.Collections.ArrayList]$css = @()
+    [void]$css.AddRange(@("body { font-family: verdana; font-size: 12px; }"))
 
-    [void]$html.Add("<html>")
-    [void]$html.Add("<head>")
+    [System.Collections.ArrayList]$thead = @()
+    [void]$thead.AddRange(@("<thead>","<tr>"))
+    [void]$thead.AddRange(@("</tr>","</thead>"))
+
+    [System.Collections.ArrayList]$html = @()
+    [void]$html.AddRange(@("<html>","<head>"))
     [void]$html.Add("<title>LogSloth Log Export</title>")
+    [void]$html.AddRange(@("<style>",$css,"</style>"))
     [void]$html.Add("</head>")
     [void]$html.Add("<body>")
-    [void]$html.Add("Hello World")    
+    [void]$html.Add("<table>")
+    [void]$html.AddRange($thead)
+
+    [void]$html.Add("</table>")
     [void]$html.Add("</body>")
     [void]$html.Add("</html>")
 
