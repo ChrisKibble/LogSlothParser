@@ -589,7 +589,7 @@ Function ConvertTo-LogSlothHTML {
         [switch]$SkipWarning
     )
 
-    Write-Verbose "Export-LogSlothLog Function is beginning"
+    Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
     [System.Collections.ArrayList]$css = @()
@@ -624,7 +624,7 @@ Function ConvertTo-LogSlothHTML {
     [void]$html.Add("</body>")
     [void]$html.Add("</html>")
 
-    Write-Verbose "Export-LogSlothLog Function is returning"
+    Write-Verbose "ConvertTo-LogSlothHTML Function is returning"
     Return $html
 }
 
