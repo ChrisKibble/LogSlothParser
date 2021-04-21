@@ -585,14 +585,16 @@ Function Import-LogW3CExtended {
 Function ConvertTo-LogSlothHTML {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [LogSloth]$LogObject
+        [LogSloth]$LogObject,
+        [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
+        [switch]$SkipWarning
     )
 
     Write-Verbose "Export-LogSlothLog Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
     Write-Verbose "Export-LogSlothLog Function is returning"
-    Return
+    Return "Hello Darkness My Old Friend"
 }
 
 Function Export-LogSlothLog {
@@ -602,15 +604,29 @@ Function Export-LogSlothLog {
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, Position=2)]
         [System.IO.FileInfo]$Path,
         [Parameter(Mandatory=$false, ValueFromPipeline=$false, Position=3)]
-        [LogSlothExportType]$Format = [LogSlothExportType]::HTML
+        [LogSlothExportType]$Format = [LogSlothExportType]::HTML,
+        [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
+        [switch]$SkipWarning,
+        [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
+        [Switch]$Force
     )
 
     Write-Verbose "Export-LogSlothLog Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
+
+    Switch($Format) {
+        "HTML" {
+            Try {
+                $LogObject | ConvertTo-LogSlothHTML | Out-File $Path -Force:$force -ErrorAction Stop
+            } Catch {
+                Throw "Unable to export file. $($_.Exeption.Message)"
+            }
+        }
+    }
 
     Write-Verbose "Export-LogSlothLog Function is returning"
     Return
 }
 
 # New changes here should be added to the manifest as well.
-Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType,Export-LogSlothLog
+Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType,Export-LogSlothLog,ConvertTo-LogSlothHTML
