@@ -253,6 +253,14 @@ Function Import-LogSloth {
         }
     }
 
+    Write-Verbose "Adding Log Line Numbers to Array"
+
+    [int]$lineNumber = 0
+    $oLog.ForEach{
+        $lineNumber++
+        Add-Member -InputObject $_ -MemberType NoteProperty -Name "%%LineNo" -Value $lineNumber
+    }
+
     $log.logData = $oLog
 
     Write-Verbose "Function is complete, Returning."
