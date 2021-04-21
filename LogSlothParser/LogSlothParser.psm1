@@ -586,7 +586,8 @@ Function ConvertTo-LogSlothHTML {
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [LogSloth]$LogObject,
         [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
-        [switch]$SkipWarning
+        [switch]$SkipWarning,
+        [switch]$IncludeRawLog
     )
 
     Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
@@ -595,7 +596,11 @@ Function ConvertTo-LogSlothHTML {
     [System.Collections.ArrayList]$css = @()
     [void]$css.Add("#LogTable td { font-family: verdana; font-size: 12px; }")
     [void]$css.Add("#LogTable th { font-family: verdana; font-size: 12px; font-weight: bold; text-align: left; }")
-
+    
+    if($IncludeRawLog) {
+        [void]$css.Add("#LogRaw { font-family: 'courier new'; font-size: 12px; width: 100%; height: 200px; margin-top: 20px; white-space: nowrap; overflow: auto;")
+    }
+    
     [System.Collections.ArrayList]$links = @()
     [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
 
@@ -641,6 +646,13 @@ Function ConvertTo-LogSlothHTML {
     [void]$html.AddRange($thead)
     [void]$html.AddRange($tbody)
     [void]$html.Add("</table>")
+
+    if($IncludeRawLog) {
+        [void]$html.Add("<textarea id=`"LogRaw`">")
+        [void]$html.Add($log.LogDataRaw)
+        [void]$html.Add("</textarea>")
+    }
+
     [void]$html.Add("</body>")
     [void]$html.Add("</html>")
 
@@ -657,8 +669,8 @@ Function Export-LogSlothLog {
         [Parameter(Mandatory=$false, ValueFromPipeline=$false, Position=3)]
         [LogSlothExportType]$Format = [LogSlothExportType]::HTML,
         [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
-        [switch]$SkipWarning,
-        [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
+        [Switch]$IncludeRawLog,
+        [Switch]$SkipWarning,
         [Switch]$Force
     )
 
@@ -668,7 +680,7 @@ Function Export-LogSlothLog {
     Switch($Format) {
         "HTML" {
             Try {
-                $LogObject | ConvertTo-LogSlothHTML -SkipWarning | Out-File $Path -Encoding utf8 -Force:$force -ErrorAction Stop
+                $LogObject | ConvertTo-LogSlothHTML -IncludeRawLog:$includeRawLog -SkipWarning | Out-File $Path -Encoding utf8 -Force:$force -ErrorAction Stop
             } Catch {
                 Throw "Unable to export file. $($_.Exeption.Message)"
             }
