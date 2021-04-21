@@ -595,6 +595,9 @@ Function ConvertTo-LogSlothHTML {
     [System.Collections.ArrayList]$css = @()
     [void]$css.AddRange(@("body { font-family: verdana; font-size: 12px; }"))
 
+    [System.Collections.ArrayList]$scripts = @()
+    [void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
+
     [System.Collections.ArrayList]$thead = @()
     [void]$thead.AddRange(@("<thead>","<tr>"))
     ForEach($prop in $log.LogData[0].psobject.Properties.Name) {
@@ -614,6 +617,7 @@ Function ConvertTo-LogSlothHTML {
     [System.Collections.ArrayList]$html = @()
     [void]$html.AddRange(@("<html>","<head>"))
     [void]$html.Add("<title>LogSloth Log Export</title>")
+    [void]$html.AddRange($scripts)
     [void]$html.AddRange(@("<style>",$css,"</style>"))
     [void]$html.Add("</head>")
     [void]$html.Add("<body>")
