@@ -593,8 +593,19 @@ Function ConvertTo-LogSlothHTML {
     Write-Verbose "Export-LogSlothLog Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
+    [System.Collections.ArrayList]$html = @()
+
+    [void]$html.Add("<html>")
+    [void]$html.Add("<head>")
+    [void]$html.Add("<title>LogSloth Log Export</title>")
+    [void]$html.Add("</head>")
+    [void]$html.Add("<body>")
+    [void]$html.Add("Hello World")    
+    [void]$html.Add("</body>")
+    [void]$html.Add("</html>")
+
     Write-Verbose "Export-LogSlothLog Function is returning"
-    Return "Hello Darkness My Old Friend"
+    Return $html
 }
 
 Function Export-LogSlothLog {
@@ -617,7 +628,7 @@ Function Export-LogSlothLog {
     Switch($Format) {
         "HTML" {
             Try {
-                $LogObject | ConvertTo-LogSlothHTML | Out-File $Path -Force:$force -ErrorAction Stop
+                $LogObject | ConvertTo-LogSlothHTML -SkipWarning | Out-File $Path -Force:$force -ErrorAction Stop
             } Catch {
                 Throw "Unable to export file. $($_.Exeption.Message)"
             }
