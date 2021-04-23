@@ -585,7 +585,6 @@ Function ConvertTo-LogSlothHTML {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [LogSloth]$LogObject,
-        [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
         [switch]$SkipWarning,
         [switch]$IncludeRawLog
     )
