@@ -266,6 +266,22 @@ Function Import-LogSloth {
 
     $log.logData = $oLog
 
+    Write-Verbose "Apply default coloring rules"
+
+    $FormatList = [System.Collections.ArrayList]::New()
+
+    $LogFormat = [LogSlothFormatting]::New()
+    $LogFormat.Lookup = "(?i)\bError\b"
+    $LogFormat.TextColor = [System.Drawing.Color]::Red
+    $FormatList.add($LogFormat) | Out-Null
+
+    $LogFormat = [LogSlothFormatting]::New()
+    $LogFormat.Lookup = "(?i)\bFail(?:ing|ure|)\b"
+    $LogFormat.TextColor = [System.Drawing.Color]::Red
+    $FormatList.add($LogFormat) | Out-Null
+
+    $log.LogFormatting = $FormatList
+
     Write-Verbose "Function is complete, Returning."
     Return $log
 }
