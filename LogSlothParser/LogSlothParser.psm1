@@ -341,8 +341,8 @@ Function Import-LogSloth {
                 If($okToImport) {
                     $newRule = [LogSlothFormatting]::New()
                     $newRule.Lookup = [regex]$rule.Lookup
-                    $newRule.TextColor = [System.Drawing.Color]$rule.TextColor
-                    $newRule.BackgroundColor = [System.Drawing.Color]$rule.BackgroundColor
+                    if($rule.TextColor) { $newRule.TextColor = [System.Drawing.Color]$rule.TextColor }
+                    if($rule.BackgroundCOlor) { $newRule.BackgroundColor = [System.Drawing.Color]$rule.BackgroundColor }
                     [void]$newLogFormatting.Add($newRule)    
                 }
             }
