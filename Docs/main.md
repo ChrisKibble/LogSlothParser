@@ -73,4 +73,4 @@ Regardless of which method you use, you'll get your `$log` variable will return 
 - LogData - A sanitized array of objects, where each item in the array is a line of your log file, and each object contains all of the fields of those lines.
 - LogDataUnsanitized - The pre-sanitizied version of your log.
 - SanitizedReplacements - The content that was replaced in the sanitized output of your log data
-- SantitizeType - The rules used to sanitize the log file (see **THIS PAGE** for more information)
+- SantitizeType - The rules used to sanitize the log file (see [Import-LogSlothSanitized](import-logslothsanitized.md) for more information)
