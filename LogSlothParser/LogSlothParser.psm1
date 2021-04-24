@@ -324,15 +324,23 @@ Function Import-LogSloth {
 
         If($LogFormatting) {
             
+            $newLogFormatting = [System.Collections.ArrayList]::New()
             $okToImport = $true
             ForEach($rule in $LogFormatting) {
                 If(-Not(Test-FormatRule $Rule)) {
                     $okToImport = $false
                 }
+                If($okToImport) {
+                    $newRule = [LogSlothFormatting]::New()
+                    $newRule.Lookup = [regex]$rule.Lookup
+                    $newRule.TextColor = [System.Drawing.Color]$rule.TextColor
+                    $newRule.BackgroundColor = [System.Drawing.Color]$rule.BackgroundColor
+                    [void]$newLogFormatting.Add($newRule)    
+                }
             }
 
             if($okToImport) {
-                $log.LogFormatting = $LogFormatting
+                $log.LogFormatting = $newLogFormatting
             } else {
                 Write-Error "Invalid rule(s) passed in LogFormatting.  Reverting to Default."
                 $LogFormatting = $null
@@ -722,6 +730,9 @@ Function ConvertTo-LogSlothHTML {
         If($rule.TextColor -ne [System.Drawing.Color]::Empty) { 
             Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "TextColor" -Value (Convert-Color2Hex $rule.TextColor) -Force
         }
+        If($rule.BackgroundColor -ne [System.Drawing.Color]::Empty) { 
+            Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "BackgroundColor" -Value (Convert-Color2Hex $rule.BackgroundColor) -Force
+        }
         $cssFormatRules.Add($thisRule) | Out-Null
         $cssIndex++ 
     }
@@ -732,8 +743,8 @@ Function ConvertTo-LogSlothHTML {
 
     ForEach($rule in $cssFormatRules) {
         $ruleText = ""
-        If($rule.BackgroundColor) { $ruleText += "background-color: $($rule.BackgroundColor)" }
-        If($rule.TextColor) { $ruleText += "color: $($rule.TextColor)" }
+        If($rule.BackgroundColor) { $ruleText += "background-color: $($rule.BackgroundColor); " }
+        If($rule.TextColor) { $ruleText += "color: $($rule.TextColor); " }
         [void]$css.Add("#LogTable tr.rxMatch$($rule.RuleNum) { $ruleText }")
     }
 
