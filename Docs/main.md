@@ -13,6 +13,7 @@ Import-Module LogSlothParser
 - [Import-LogSloth](import-logsloth.md)
 - [Import-LogSlothSanitized](import-logslothsanitized.md)
 - [Get-LogSlothType](get-logslothtype.md)
+- [ConvertTo-LogSlothHTML](convertto-logslothhtml.md)
 
 ## Importing a Log
 
