@@ -77,7 +77,6 @@ $warningRule = @{
 # Add these two rules to the array
 [void]$Rules.Add($errorRule)
 [void]$Rules.Add($warningRule)
-
 ```
 
 Now that you have an array with your custom rules, you can pass it to your import:
@@ -87,6 +86,10 @@ $log = Import-LogSloth -LogFile ExecMgr.log -LogFormatting $Rules
 ```
 
 Remember, these rules only apply when exporting or converting your log file.
+
+Tip: All of the colors available to PowerShell (or perhaps more specifically, to .NET) can be used.  For a list of available colors, see [this page](https://docs.microsoft.com/en-us/dotnet/api/system.windows.media.brushes?redirectedfrom=MSDN&view=net-5.0).
+```
+
 
 ## Pre-Release Warnings
 In pre-release versions of LogSlothParser, a warning will be generated when you call `Import-LogSloth` that the module you're using is in beta.  To suppress this warning, call LogSloth as follows:
