@@ -11,6 +11,7 @@ Import-Module LogSlothParser
 ## Doc Pages Available
 
 - [Import-LogSloth](import-logsloth.md)
+- [Import-LogSlothSanitized](import-logslothsanitized.md)
 
 ## Importing a Log
 
