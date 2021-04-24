@@ -725,6 +725,9 @@ Function ConvertTo-LogSlothHTML {
     Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
+    Write-Verbose "Excluding Meta Properties from Export"
+    $LogObject.LogData = $LogObject.LogData | Select-Object -Property * -ExcludeProperty "%%*"
+
     # Build Collection of Formatting Rules
     $cssFormatRules = [System.Collections.ArrayList]::New()
     $cssIndex = 0
