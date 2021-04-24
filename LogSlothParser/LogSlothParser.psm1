@@ -604,6 +604,18 @@ Function Import-LogW3CExtended {
     Return $oLog
 }
 
+Function Convert-Color2Hex {
+    Param(
+        [System.Drawing.Color]$Color
+    )
+
+    $rHex = [Convert]::ToString($color.r, 16).padLeft(2, "0")
+    $gHex = [Convert]::ToString($color.g, 16).padLeft(2, "0")
+    $bHex = [Convert]::ToString($color.b, 16).padLeft(2, "0")
+
+    Return "#$rHex$gHex$bHex".ToUpper()
+}
+
 Function ConvertTo-LogSlothHTML {
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
@@ -615,10 +627,34 @@ Function ConvertTo-LogSlothHTML {
     Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
     If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
+    # Build Collection of Formatting Rules
+    $cssFormatRules = [System.Collections.ArrayList]::New()
+    $cssIndex = 0
+    ForEach($rule in $LogObject.LogFormatting) {
+        $thisRule = [PSCustomObject]@{
+            RuleNum = $cssIndex
+            Lookup = $rule.Lookup
+            TextColor = $null
+            BackgroundColor = $null
+        }
+        If($rule.TextColor -ne [System.Drawing.Color]::Empty) { 
+            Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "TextColor" -Value (Convert-Color2Hex $rule.TextColor) -Force
+        }
+        $cssFormatRules.Add($thisRule) | Out-Null
+        $cssIndex++ 
+    }
+
     [System.Collections.ArrayList]$css = @()
     [void]$css.Add("#LogTable td { font-family: verdana; font-size: 12px; }")
     [void]$css.Add("#LogTable th { font-family: verdana; font-size: 12px; font-weight: bold; text-align: left; }")
-    
+
+    ForEach($rule in $cssFormatRules) {
+        $ruleText = ""
+        If($rule.BackgroundColor) { $ruleText += "background-color: $($rule.BackgroundColor)" }
+        If($rule.TextColor) { $ruleText += "color: $($rule.TextColor)" }
+        [void]$css.Add("#LogTable tr.rxMatch$($rule.RuleNum) { $ruleText }")
+    }
+
     if($IncludeRawLog) {
         [void]$css.Add("#LogRaw { font-family: 'courier new'; font-size: 12px; width: 100%; height: 200px; margin-top: 20px; white-space: nowrap; overflow: auto;")
     }
