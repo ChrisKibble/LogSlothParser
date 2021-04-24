@@ -683,9 +683,25 @@ Function ConvertTo-LogSlothHTML {
     [void]$thead.AddRange(@("</tr>","</thead>"))
 
     [System.Collections.ArrayList]$tbody = @()
-    ForEach($entry in $logObject.LogData) {
-        [void]$tbody.Add("<tr>")
-        ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) {
+    ForEach($entry in $logObject.LogData) { #ForEach Line in the Log File
+
+        # Determine if we need to apply any style to this row based on RegEx Rules
+        $trClass = ""
+        ForEach($rule in $cssFormatRules) {
+            ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) { #ForEach Property (Field/Column)
+                if($rule.Lookup.IsMatch($entry.$prop)) {
+                    $trClass = "rxMatch$($rule.ruleNum)"
+                }
+            }    
+        }
+
+        if($trClass) {
+            [void]$tbody.Add("<tr class=`"$trClass`">")
+        } else {
+            [void]$tbody.Add("<tr>")
+        }
+        
+        ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) { #ForEach Property (Field/Column)
             [void]$tbody.Add("<td>$([System.Web.HttpUtility]::HTMLEncode($entry.$prop))</td>")
         }    
         [void]$tbody.Add("</tr>")
