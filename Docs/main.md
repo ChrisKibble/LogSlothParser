@@ -14,6 +14,7 @@ Import-Module LogSlothParser
 - [Import-LogSlothSanitized](import-logslothsanitized.md)
 - [Get-LogSlothType](get-logslothtype.md)
 - [ConvertTo-LogSlothHTML](convertto-logslothhtml.md)
+- [Export-LogSlothLog](export-logslothlog.md)
 
 ## Importing a Log
 
