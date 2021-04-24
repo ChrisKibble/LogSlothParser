@@ -101,6 +101,58 @@ Function SanitizeByMatch {
 
     Return $replList
 }
+
+Function Test-FormatRule {
+    
+    [CmdLetBinding()]
+    Param(
+        $Rule
+    )
+
+    Write-Verbose "Testing Formatting Rule"
+
+    If(-Not($rule.Lookup)) {
+        Write-Verbose "Missing Lookup Value, returning False"
+        Return $false
+    }
+
+    If(-not($Rule.TextColor) -and -not($Rule.BackgroundColor)) {
+        Write-Verbose "One of TextColor or BackgroundColor is required, returning false"
+        Return $false
+    }
+
+    Try {
+        $x = [regex]$Rule.Lookup
+        Write-Verbose "RegEx Test Passed"
+    } Catch {
+        Write-Verbose "Lookup is not valid regex, returning false"
+        Return $false
+    }
+    
+    If($rule.TextColor) {
+        Try {
+            $x = [System.Drawing.Color]$Rule.TextColor
+            Write-Verbose "TextColor Looks OK"
+        } Catch {
+            Write-Verbose "TextColor is not valid System.Drawing.Color, returning false"
+            Return $false
+        }
+    }
+
+    If($rule.BackgroundColor) {
+        Try {
+            $x = [System.Drawing.Color]$Rule.BackgroundColor
+            Write-Verbose "BackgroundColor Looks OK"
+        } Catch {
+            Write-Verbose "BackgroundColor is not valid System.Drawing.Color, returning false"
+            Return $false
+        }
+    }
+
+    Write-Verbose "All checks passed, returning True"
+    Return $true
+}
+
 Function Get-LogSlothType {
     
     [Cmdletbinding()]
@@ -198,6 +250,8 @@ Function Import-LogSloth {
         [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
         [System.IO.FileInfo]$LogFile,
         [Array]$Headers = @(),
+        [System.Collections.ArrayList]$LogFormatting,
+        [Switch]$SkipFormatting,
         [switch]$SkipWarning
     )
 
@@ -266,22 +320,44 @@ Function Import-LogSloth {
 
     $log.logData = $oLog
 
-    Write-Verbose "Apply default coloring rules"
+    If(-Not($SkipFormatting)) {
 
-    $FormatList = [System.Collections.ArrayList]::New()
+        If($LogFormatting) {
+            
+            $okToImport = $true
+            ForEach($rule in $LogFormatting) {
+                If(-Not(Test-FormatRule $Rule)) {
+                    $okToImport = $false
+                }
+            }
 
-    $LogFormat = [LogSlothFormatting]::New()
-    $LogFormat.Lookup = "(?i)\bError\b"
-    $LogFormat.TextColor = [System.Drawing.Color]::Red
-    $FormatList.add($LogFormat) | Out-Null
+            if($okToImport) {
+                $log.LogFormatting = $LogFormatting
+            } else {
+                Write-Error "Invalid rule(s) passed in LogFormatting.  Reverting to Default."
+                $LogFormatting = $null
+            }
+        }
+        
+        If(-Not($LogFormatting)) {
+            Write-Verbose "Apply default coloring rules"
 
-    $LogFormat = [LogSlothFormatting]::New()
-    $LogFormat.Lookup = "(?i)\bFail(?:ing|ure|)\b"
-    $LogFormat.TextColor = [System.Drawing.Color]::Red
-    $FormatList.add($LogFormat) | Out-Null
-
-    $log.LogFormatting = $FormatList
-
+            $FormatList = [System.Collections.ArrayList]::New()
+        
+            $LogFormat = [LogSlothFormatting]::New()
+            $LogFormat.Lookup = "(?i)\bError\b"
+            $LogFormat.TextColor = [System.Drawing.Color]::Red
+            $FormatList.add($LogFormat) | Out-Null
+        
+            $LogFormat = [LogSlothFormatting]::New()
+            $LogFormat.Lookup = "(?i)\bFail(?:ing|ure|)\b"
+            $LogFormat.TextColor = [System.Drawing.Color]::Red
+            $FormatList.add($LogFormat) | Out-Null
+            
+            $log.LogFormatting = $FormatList    
+        }
+    }
+    
     Write-Verbose "Function is complete, Returning."
     Return $log
 }
@@ -306,6 +382,12 @@ Function Import-LogSlothSanitized {
         })]
         [string]$Prefix = "sanitized",
         [Array]$Headers = @(),
+        [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
+        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
+        [System.Collections.ArrayList]$LogFormatting,
+        [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
+        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
+        [Switch]$SkipFormatting,
         [switch]$SkipWarning
     )
 
@@ -467,7 +549,7 @@ Function Import-LogSlothSanitized {
     }
 
     Write-Verbose "Calling Import-LogSloth to Format Data Properly"
-    $log = Import-LogSloth -LogData $LogData -SkipWarning
+    $log = Import-LogSloth -LogData $LogData -SkipWarning -LogFormatting $LogFormatting -SkipFormatting:$SkipFormatting
 
     Write-Verbose "Writing Sanitization Metadata to Log Class"
     $log.SanitizeType = $Sanitize
@@ -700,7 +782,7 @@ Function ConvertTo-LogSlothHTML {
         } else {
             [void]$tbody.Add("<tr>")
         }
-        
+
         ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) { #ForEach Property (Field/Column)
             [void]$tbody.Add("<td>$([System.Web.HttpUtility]::HTMLEncode($entry.$prop))</td>")
         }    
