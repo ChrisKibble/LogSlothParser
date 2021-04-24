@@ -56,7 +56,7 @@ $log = Import-LogSlothSanitized -LogFile ExecMgr.log -Sanitize IPv4,SID
 
 ## Changing the Sanitize Prefix
 
-By default, the prefix added to to beginning to each replacement in the log is `sanitized` (e.g. `sanitizedip1` as shown in the example further up on this page).  To replace that prefix, use the `-prefix` paramter:
+By default, the prefix added to to beginning to each replacement in the log is `sanitized` (e.g. `sanitizedip1` as shown in the example further up on this page).  To replace that prefix, use the `-prefix` parameter:
 
 ```
 Import-LogSlothSanitized -LogFile ExecMgr.log -Prefix "ABC"
