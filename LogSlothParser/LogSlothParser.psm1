@@ -52,12 +52,8 @@ Class LogSloth {
 
 Class LogSlothFormatting {
     [System.Text.RegularExpressions.RegEx]$Lookup
-    
-    [ValidatePattern('(?i)^(?:#|)([a-f0-9]{6}|([a-f0-9]{6}))$')]
-    [String]$ForegroundColorHex
-
-    [ValidatePattern('(?i)^(?:#|)([a-f0-9]{6}|([a-f0-9]{6}))$')]
-    [String]$BackgroundColorHex
+    [System.Drawing.Color]$TextColor
+    [System.Drawing.Color]$BackgroundColor    
 }
 
 Function SanitizeByMatch {
