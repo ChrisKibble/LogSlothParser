@@ -43,10 +43,21 @@ Class LogSloth {
     [System.Collections.ArrayList]$LogData = @()
     [String]$LogDataUnsanitized = $null
     [String]$LogDataRaw = $null
-    
+    [System.Collections.ArrayList]$LogFormatting
+
     [Boolean] IsSanitized() {
         Return $($this.SanitizeType -ne [SanitizeType]::None)
     }
+}
+
+Class LogSlothFormatting {
+    [System.Text.RegularExpressions.RegEx]$Lookup
+    
+    [ValidatePattern('(?i)^(?:#|)([a-f0-9]{6}|([a-f0-9]{6}))$')]
+    [String]$ForegroundColorHex
+
+    [ValidatePattern('(?i)^(?:#|)([a-f0-9]{6}|([a-f0-9]{6}))$')]
+    [String]$BackgroundColorHex
 }
 
 Function SanitizeByMatch {
