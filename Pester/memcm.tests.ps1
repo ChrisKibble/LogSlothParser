@@ -41,5 +41,7 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
 
         # Log Type should be SCCM or SCCMSimple
         $log.LogType | Should -BeIn @("SCCM","SCCMSIMPLE")
+ 
+        $log.logData[0].'%%LineNo' | Should -BeExactly 1
     }
 }
