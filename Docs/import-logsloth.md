@@ -28,7 +28,7 @@ Property|Purpose
 -|-
 LogData|An array of objects, where each item in the array is a line of your log file, and each object contains all of the fields of those lines.
 LogDataRaw|The original text parsed from the log file.
-LogFormatting|Formatting rules that will be applied to your log if exported (more on this on **THIS PAGE**)
+LogFormatting|Formatting rules that will be applied to your log if exported
 LogType|The type of log file that was detected (e.g. SCCM, CSV)
 
 # Log Headers
@@ -88,8 +88,6 @@ $log = Import-LogSloth -LogFile ExecMgr.log -LogFormatting $Rules
 Remember, these rules only apply when exporting or converting your log file.
 
 Tip: All of the colors available to PowerShell (or perhaps more specifically, to .NET) can be used.  For a list of available colors, see [this page](https://docs.microsoft.com/en-us/dotnet/api/system.windows.media.brushes?redirectedfrom=MSDN&view=net-5.0).
-```
-
 
 ## Pre-Release Warnings
 In pre-release versions of LogSlothParser, a warning will be generated when you call `Import-LogSloth` that the module you're using is in beta.  To suppress this warning, call LogSloth as follows:
