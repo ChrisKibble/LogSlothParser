@@ -43,7 +43,7 @@ $log = Import-LogSloth -LogFile AppExport.csv -Headers @("DateTime","LogText","C
 
 ## Log Formatting
 
-LogSloth has built in rules for formatting warnings and error messages within log files for when they are exported to another format (see [ConvertTo-LogSlothHTML](convertto-logslothhtml.md) and [Export-LogSloth](export-logsloth.md)). **LINK TEST**
+LogSloth has built in rules for formatting warnings and error messages within log files for when they are exported to another format (see [ConvertTo-LogSlothHTML](convertto-logslothhtml.md) and [Export-LogSloth](export-logslothlog.md)).
 
 To skip creating formatting rules, call the function like so:
 
