@@ -6,7 +6,6 @@ BeforeAll {
 Describe "Ensure TSV Log Files Import Successfully" {
     
     It "Validate TSV Import Works as Expected Importing File"  {          
-        Write-Host $TSVFile
         $log = Import-LogSloth -LogFile $TSVFile -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
         $log.logData.count | Should -BeExactly 5
