@@ -17,3 +17,7 @@ Install-Module -Name LogSlothParser -AllowPrerelease
 ```
 
 This module has been tested on PowerShell versions up through v7.1.3, however future versions should work as well.
+
+# Use Instructions
+
+For more information on how to use this module, see [the docs](/Docs/main.md).
