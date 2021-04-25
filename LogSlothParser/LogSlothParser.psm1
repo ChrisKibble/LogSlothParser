@@ -165,7 +165,7 @@ Function Get-LogSlothType {
     )
 
     Write-Verbose "Get-LogSlothType Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Get-LogSlothType)" }
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Get-LogSlothType)" }
 
     If($logFile) {
         Try {
@@ -256,7 +256,7 @@ Function Import-LogSloth {
     )
 
     Write-Verbose "Import-LogSloth Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Import-LogSloth)" }
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSloth)" }
 
     If($logFile) {
         Try {
@@ -409,7 +409,7 @@ Function Import-LogSlothSanitized {
 
     Write-Verbose "Import-LogSlothSanitized Function is beginning"
 
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)" }
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)" }
 
     If($logFile) {
         Try {
@@ -723,7 +723,7 @@ Function ConvertTo-LogSlothHTML {
     )
 
     Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
     Write-Verbose "Excluding Meta Properties from Export"
     $LogObject.LogData = $LogObject.LogData | Select-Object -Property * -ExcludeProperty "%%*"
@@ -853,7 +853,7 @@ Function Export-LogSlothLog {
     )
 
     Write-Verbose "Export-LogSlothLog Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
+    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
 
     Switch($Format) {
         "HTML" {
