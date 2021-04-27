@@ -364,13 +364,13 @@ Function Import-LogSloth {
             $LogFormat.Lookup = "(?i)\bError\b"
             $LogFormat.TextColor = [System.Drawing.Color]::Red
             $FormatList.add($LogFormat) | Out-Null
-        
+
             $LogFormat = [LogSlothFormatting]::New()
             $LogFormat.Lookup = "(?i)\bFail(?:ing|ure|)\b"
             $LogFormat.TextColor = [System.Drawing.Color]::Red
             $FormatList.add($LogFormat) | Out-Null
-            
-            $log.LogFormatting = $FormatList    
+
+            $log.LogFormatting = $FormatList
         }
     }
 
