@@ -131,7 +131,7 @@ Function Test-FormatRule {
     
     If($rule.TextColor) {
         Try {
-            $x = [System.Drawing.Color]$Rule.TextColor
+            [System.Drawing.Color]$Rule.TextColor
             Write-Verbose "TextColor Looks OK"
         } Catch {
             Write-Verbose "TextColor is not valid System.Drawing.Color, returning false"
