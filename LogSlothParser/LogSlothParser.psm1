@@ -565,7 +565,7 @@ Function Import-LogSlothSanitized {
     }
 
     Write-Verbose "Calling Import-LogSloth to Format Data Properly"
-    $log = Import-LogSloth -LogData $LogData -SkipWarning -LogFormatting $LogFormatting -SkipFormatting:$SkipFormatting
+    $log = Import-LogSloth -LogData $LogData -SkipWarning -LogFormatting $LogFormatting -SkipFormatting:$SkipFormatting -Headers $headers
 
     Write-Verbose "Writing Sanitization Metadata to Log Class"
     $log.SanitizeType = $Sanitize
