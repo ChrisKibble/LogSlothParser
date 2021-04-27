@@ -6,10 +6,10 @@ $logFiles = Get-ChildItem "$PSScriptRoot\..\LogSamples\MEMCM" -Exclude ".*" -Rec
 $logFiles = $logFiles.ForEach{ Resolve-Path $_ -Relative }
 
 Describe "Ensure MEMCM Log Files Import Successfully" {
-    
-    It "Pre-Import Verification on <_>" -TestCases $logFiles {  
-        
-        $rxValidCM = [regex]::New('(?msi)^<!\[LOG\[(?:.*?)]LOG]!><time="(?:.*?)" date="(?:.*?)" component="(?:.*?)" context="(?:.*?)" type="(?:.*?)" thread="(?:.*?)" file="(?:.*?)">$')    
+
+    It "Pre-Import Verification on <_>" -TestCases $logFiles {
+
+        $rxValidCM = [regex]::New('(?msi)^<!\[LOG\[(?:.*?)]LOG]!><time="(?:.*?)" date="(?:.*?)" component="(?:.*?)" context="(?:.*?)" type="(?:.*?)" thread="(?:.*?)" file="(?:.*?)">$')
         $rxValidCMSimple = [regex]::New('(.*?) \$\$<(.*?)><(.*?)><thread=(.*?)>')
 
         $logContent = Get-Content $_ -Raw
@@ -41,7 +41,7 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
 
         # Log Type should be SCCM or SCCMSimple
         $log.LogType | Should -BeIn @("SCCM","SCCMSIMPLE")
- 
+
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
     }
 }
