@@ -5,11 +5,11 @@ BeforeAll {
 }
 
 Describe "Ensure CSV Log Files Import Successfully" {
-    
+
     It "Validate CSV Import Works as Expected Importing File"  {
         $log = Import-LogSloth -LogFile $csvFile -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 
@@ -32,7 +32,7 @@ Describe "Ensure CSV Log Files Import Successfully" {
     It "Validate CSV Sanitization Import Works as Expected Importing File"  {
         $log = Import-LogSlothSanitized -LogFile $csvFile -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 
@@ -40,7 +40,7 @@ Describe "Ensure CSV Log Files Import Successfully" {
         $logData = Get-Content $csvFile -Raw
         $log = Import-LogSLothSanitized -LogData $logData -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 

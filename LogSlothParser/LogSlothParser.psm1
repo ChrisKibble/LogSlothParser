@@ -15,13 +15,13 @@ Enum LogSlothExportType {
 [Flags()]
 Enum SanitizeType {
     None = 0
-    
+
     guid = 1
     hash64 = 2
     ipv4 = 4
     sid = 8
     urlHost = 16
-    
+
     cmDistributionPoint = 32
     cmAdvertisementId = 64
     cmPackageId = 128
@@ -71,7 +71,7 @@ Function SanitizeByMatch {
 
     Write-Verbose "Getting Matches for Input Data"
     $matchList = $rxLookup.matches($inputData)
-    
+
     Write-Verbose "Reducing to Unique List of Matches"
     $uniqueMatchList = New-Object -TypeName System.Collections.Generic.HashSet[String]
     [void]$matchList.ForEach{ $uniqueMatchList.Add($_.Groups[1].Value) }
@@ -95,7 +95,7 @@ Function SanitizeByMatch {
                 "Stub" = $stub
             }
         ) | Out-Null
-    }    
+    }
 
     Write-Verbose "Private SanitizeByMatch Function is done"
 
@@ -128,7 +128,7 @@ Function Test-FormatRule {
         Write-Verbose "Lookup is not valid regex, returning false"
         Return $false
     }
-    
+
     If($rule.TextColor) {
         Try {
             [System.Drawing.Color]$Rule.TextColor
@@ -154,7 +154,7 @@ Function Test-FormatRule {
 }
 
 Function Get-LogSlothType {
-    
+
     [Cmdletbinding()]
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
@@ -187,9 +187,9 @@ Function Get-LogSlothType {
     Write-Verbose "Using RegEx to Determine Log Type"
     Switch ($logData) {
         # SCCM
-        { $rxSCCM.IsMatch($firstLineOfData)  } { 
+        { $rxSCCM.IsMatch($firstLineOfData)  } {
             Write-Verbose "RegEx Confirmation that Log is SCCM.  Returning."
-            Return [LogType]::SCCM; break 
+            Return [LogType]::SCCM; break
         }
 
         # SCCM Simple
@@ -197,11 +197,11 @@ Function Get-LogSlothType {
             Write-Verbose "RegEx Confirmation that Log is SCCM Simple.  Returning."
             Return [LogType]::SCCMSimple; break
         }
-        
+
         # W3C Extended
-        { $rxW3CExtended.IsMatch($logData) } { 
+        { $rxW3CExtended.IsMatch($logData) } {
             Write-Verbose "RegEx Confirmation that Log is W3CExtended.  Returning."
-            Return [LogType]::W3CExtended; break 
+            Return [LogType]::W3CExtended; break
         }
 
     }
@@ -209,7 +209,7 @@ Function Get-LogSlothType {
     # Not a pre-defined type, let's make some best guesses
     Try {
         Write-Verbose "Converting Log Data to CSV"
-        $csv = $logData | ConvertFrom-csv   
+        $csv = $logData | ConvertFrom-csv
         Write-Verbose "Conversion to CSV was successful"
     } Catch {
         Write-Verbose "Failed to Convert Log  to CSV $($_.Exception.Message)"
@@ -218,7 +218,7 @@ Function Get-LogSlothType {
 
     Try {
         Write-Verbose "Converting Log Data to TSV"
-        $tsv = $logData | ConvertFrom-Csv -Delimiter "`t"   
+        $tsv = $logData | ConvertFrom-Csv -Delimiter "`t"
         Write-Verbose "Conversion to TSV was successful"
     } Catch {
         Write-Verbose "Failed to Convert Log to TSV $($_.Exception.Message)"
@@ -270,7 +270,7 @@ Function Import-LogSloth {
     $log = [LogSloth]::New()
 
     $logData = $logData.Trim()
-    
+
     $log.LogDataRaw = $LogData
 
     Write-Verbose "Getting Log Type using Get-LogSlothType Function"
@@ -283,13 +283,13 @@ Function Import-LogSloth {
 
     $oLog = [System.Collections.ArrayList]::New(@())
     Switch ($log.logType) {
-        "SCCM" { 
+        "SCCM" {
             Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData 
+            [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData
         }
         "SCCMSimple" {
             Write-Verbose "Importing SCCM Simple Log using Import-LogSCCMSimple Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCMSimple -logData $logData 
+            [System.Collections.ArrayList]$oLog = Import-LogSCCMSimple -logData $logData
         }
         "W3CExtended" {
             Write-Verbose "Importing W3C Extended Log using Import-LogW3CExtended Private Function"
@@ -331,7 +331,7 @@ Function Import-LogSloth {
     If(-Not($SkipFormatting)) {
 
         If($LogFormatting) {
-            
+
             $newLogFormatting = [System.Collections.ArrayList]::New()
             $okToImport = $true
             ForEach($rule in $LogFormatting) {
@@ -343,7 +343,7 @@ Function Import-LogSloth {
                     $newRule.Lookup = [regex]$rule.Lookup
                     if($rule.TextColor) { $newRule.TextColor = [System.Drawing.Color]$rule.TextColor }
                     if($rule.BackgroundCOlor) { $newRule.BackgroundColor = [System.Drawing.Color]$rule.BackgroundColor }
-                    [void]$newLogFormatting.Add($newRule)    
+                    [void]$newLogFormatting.Add($newRule)
                 }
             }
 
@@ -354,12 +354,12 @@ Function Import-LogSloth {
                 $LogFormatting = $null
             }
         }
-        
+
         If(-Not($LogFormatting)) {
             Write-Verbose "Apply default coloring rules"
 
             $FormatList = [System.Collections.ArrayList]::New()
-        
+
             $LogFormat = [LogSlothFormatting]::New()
             $LogFormat.Lookup = "(?i)\bError\b"
             $LogFormat.TextColor = [System.Drawing.Color]::Red
@@ -373,7 +373,7 @@ Function Import-LogSloth {
             $log.LogFormatting = $FormatList    
         }
     }
-    
+
     Write-Verbose "Function is complete, Returning."
     Return $log
 }
@@ -388,21 +388,21 @@ Function Import-LogSlothSanitized {
         [System.IO.FileInfo]$LogFile,
         [Parameter(Mandatory=$false, ParameterSetName = "LogClass")]
         [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
+        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
         [SanitizeType]$Sanitize = [SanitizeType]::All,
         [Parameter(Mandatory=$false, ParameterSetName = "LogClass")]
         [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
+        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
         [ValidateScript({
             if($_ -match "(?i)^[a-z]+$") { $true } else { throw "You must use only letters A-Z." }
         })]
         [string]$Prefix = "sanitized",
         [Array]$Headers = @(),
         [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
+        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
         [System.Collections.ArrayList]$LogFormatting,
         [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]      
+        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
         [Switch]$SkipFormatting,
         [switch]$SkipWarning
     )
@@ -426,7 +426,7 @@ Function Import-LogSlothSanitized {
     Write-Verbose "Getting Log Type"
     $logType = Get-LogSlothType -LogData $LogData -SkipWarning
 
-    If($LogType -eq [LogType]::Nothing) { 
+    If($LogType -eq [LogType]::Nothing) {
         Throw "Missing LogType"
     }
 
@@ -445,7 +445,7 @@ Function Import-LogSlothSanitized {
                 # Download URLs
                 Write-Verbose "...... Processing CM Distribution Points (Download URLs)"
                 $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Matching DP location found [0-9]{1,} - (http(?:|s):\/\/.*?) "; Stub="$($prefix)dpurl"; Quoted=$false}) | Out-Null
-                
+
                 # CMG URL
                 Write-Verbose "...... Processing CM Distribution Points (CMG URLs)"
                 $replacementList.Add([PSCustomObject]@{RegEx="(?msi)https:\/\/([^. ]+).cloudapp\.net"; Stub="$($prefix)cmghost"; Quoted=$false}) | Out-Null
@@ -546,7 +546,7 @@ Function Import-LogSlothSanitized {
         ForEach($find in $uniqueStringMatches) {
             $index++
             $replace = "$($rule.Stub)$index"
-            if($rule.Quoted) { 
+            if($rule.Quoted) {
                 $replace = "`"$replace`""
             }
             $replacementArray.Add(
@@ -559,7 +559,7 @@ Function Import-LogSlothSanitized {
     }
 
     Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
-    
+
     ForEach($replacement in $replacementArray) {
         $logData = $LogData -replace [RegEx]::Escape($replacement.text), $replacement.Replace
     }
@@ -573,12 +573,12 @@ Function Import-LogSlothSanitized {
     $log.LogDataUnsanitized = $LogDataUnsanitized
 
     Write-Verbose "Function is complete and returning"
-   
+
     Return $log
 }
 
 Function Import-LogSCCM {
-    
+
     [CmdLetBinding()]
     Param(
         [Parameter(Mandatory=$true)]
@@ -609,7 +609,7 @@ Function Import-LogSCCM {
     Write-Verbose "Looping over Lines in Log Data and building custom object"
     ForEach($item in $cmLogData) {
         $oLogLine = New-Object -TypeName PSCustomObject
-        
+
         # Get Log Text
         $logText = $rxLogText.Match($item)
         $logTime = $rxLogTime.Match($item)
@@ -627,7 +627,7 @@ Function Import-LogSCCM {
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Context -Value $logContext.Groups[1].Value
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Type -Value $logType.Groups[1].Value
         Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name File  -Value $logFile.Groups[1].Value
-        
+
         $logArray.add($oLogLine) | Out-Null
     }
     Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
@@ -638,7 +638,7 @@ Function Import-LogSCCM {
 }
 
 Function Import-LogSCCMSimple {
-    
+
     [CmdLetBinding()]
     Param(
         [Parameter(Mandatory=$true)]
@@ -677,12 +677,12 @@ Function Import-LogSCCMSimple {
 
     Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
     Write-Verbose "Function returning Log Array"
-    
+
     Return $logArray
 
 }
 Function Import-LogW3CExtended {
-    
+
     [CmdLetBinding()]
     Param(
         [Parameter(Mandatory=$true)]
@@ -738,14 +738,14 @@ Function ConvertTo-LogSlothHTML {
             TextColor = $null
             BackgroundColor = $null
         }
-        If($rule.TextColor -ne [System.Drawing.Color]::Empty) { 
+        If($rule.TextColor -ne [System.Drawing.Color]::Empty) {
             Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "TextColor" -Value (Convert-Color2Hex $rule.TextColor) -Force
         }
-        If($rule.BackgroundColor -ne [System.Drawing.Color]::Empty) { 
+        If($rule.BackgroundColor -ne [System.Drawing.Color]::Empty) {
             Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "BackgroundColor" -Value (Convert-Color2Hex $rule.BackgroundColor) -Force
         }
         $cssFormatRules.Add($thisRule) | Out-Null
-        $cssIndex++ 
+        $cssIndex++
     }
 
     [System.Collections.ArrayList]$css = @()
@@ -777,7 +777,7 @@ Function ConvertTo-LogSlothHTML {
     [System.Collections.ArrayList]$scripts = @()
     [void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
     [void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>')
-    [void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable( $($dataTableOptions | ConvertTo-Json) ); } );</script>") 
+    [void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable( $($dataTableOptions | ConvertTo-Json) ); } );</script>")
 
     [System.Collections.ArrayList]$thead = @()
     [void]$thead.AddRange(@("<thead>","<tr>"))
@@ -807,7 +807,7 @@ Function ConvertTo-LogSlothHTML {
 
         ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) { #ForEach Property (Field/Column)
             [void]$tbody.Add("<td>$([System.Web.HttpUtility]::HTMLEncode($entry.$prop))</td>")
-        }    
+        }
         [void]$tbody.Add("</tr>")
     }
 

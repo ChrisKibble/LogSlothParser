@@ -35,7 +35,7 @@ Describe "Ensure MEMCM Log Files Import Successfully" {
 
     It "Import and Sanitization Test on <_>" -TestCases $logFiles {
         $log = Import-LogSloth -LogFile $_ -SkipWarning
-        
+
         # Something should be returned
         $log | Should -Be $true
 

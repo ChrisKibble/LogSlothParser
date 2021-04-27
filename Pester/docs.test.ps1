@@ -1,7 +1,7 @@
 $docPages = Get-ChildItem $PSScriptRoot\..\Docs -Include *.md -Recurse | Select-Object -ExpandProperty Name
 
 
-Describe "Test Doc Pages" { 
+Describe "Test Doc Pages" {
 
     It "Testing Links in <_>" -TestCases $docPages {
         $mdFile = Join-Path $PSScriptRoot\..\Docs -ChildPath $_
@@ -19,11 +19,11 @@ Describe "Test Doc Pages" {
             } else {
                 "Testing $thisLink in $_" | Out-Host
                 $thisLink = Join-Path $PSScriptRoot\..\Docs -ChildPath $thisLink
-                Try { 
+                Try {
                     $thisLink = $(Resolve-Path $thisLink -ErrorAction Stop).Path
                 } catch {
                     $allPathsValid = $false
-                }    
+                }
             }
         }
         $allPathsValid | Should -Be $true

@@ -4,7 +4,7 @@ BeforeAll {
     $TSVFile = $(Resolve-Path "$PSScriptRoot\..\LogSamples\TSV\Random.tsv").Path
 }
 Describe "Ensure TSV Log Files Import Successfully" {
-    
+
     It "Validate TSV Import Works as Expected Importing File"  {
         $log = Import-LogSloth -LogFile $TSVFile -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
@@ -39,7 +39,7 @@ Describe "Ensure TSV Log Files Import Successfully" {
         $logData = Get-Content $TSVFile -Raw
         $log = Import-LogSLothSanitized -LogData $logData -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 5    
+        $log.logData.count | Should -BeExactly 5
         $log.logType | Should -Be "TSV"
     }
 
