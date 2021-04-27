@@ -122,7 +122,7 @@ Function Test-FormatRule {
     }
 
     Try {
-        $x = [regex]$Rule.Lookup
+        [regex]$Rule.Lookup
         Write-Verbose "RegEx Test Passed"
     } Catch {
         Write-Verbose "Lookup is not valid regex, returning false"
