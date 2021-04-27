@@ -53,7 +53,7 @@ Class LogSloth {
 Class LogSlothFormatting {
     [System.Text.RegularExpressions.RegEx]$Lookup
     [System.Drawing.Color]$TextColor
-    [System.Drawing.Color]$BackgroundColor    
+    [System.Drawing.Color]$BackgroundColor
 }
 
 Function SanitizeByMatch {
@@ -433,9 +433,9 @@ Function Import-LogSlothSanitized {
     $LogDataUnsanitized = $LogData
 
     $replacementList = [System.Collections.ArrayList]::New()
-    
+
     # Build Replacements Table
-    
+
     Write-Verbose "Building Replacements Table for Input Data to Sanitize"
     # -- Configuration Manager Specific --
     If($logType -eq [LogType]::SCCM -or $logType -eq [LogType]::SCCMSimple) {
@@ -532,16 +532,16 @@ Function Import-LogSlothSanitized {
     } # // End of Switch (Generic)
 
     Write-Verbose "Building List of Data to Sanitize"
-    
+
     $replacementArray = [System.Collections.ArrayList]::New()
-    
+
     ForEach($rule in $replacementList) {
         $uniqueStringMatches = [System.Collections.Generic.HashSet[string]]::New([StringComparer]::InvariantCultureIgnoreCase)
         $rxMatches = [regex]::Matches($LogData, $rule.regex)
         ForEach($m in $rxMatches) {
             $uniqueStringMatches.Add($m.groups[1].value) | Out-Null
         }
-        
+
         $index = 0
         ForEach($find in $uniqueStringMatches) {
             $index++
@@ -571,9 +571,9 @@ Function Import-LogSlothSanitized {
     $log.SanitizeType = $Sanitize
     $log.SanitizedReplacements = $replacementArray
     $log.LogDataUnsanitized = $LogDataUnsanitized
-    
+
     Write-Verbose "Function is complete and returning"
-    
+   
     Return $log
 }
 
@@ -647,9 +647,9 @@ Function Import-LogSCCMSimple {
     )
 
     Write-Verbose "Private Import-LogSCCMSimple Function is beginning"
-    
+
     $cmLogData = $logData -split "`r`n" | Where-Object { $_ -ne "" -and $_ -notin ("ROLLOVER")}
-    
+
     $logArray = [System.Collections.ArrayList]::New()
 
     Write-Verbose "Building RegEx Variables"
@@ -657,12 +657,12 @@ Function Import-LogSCCMSimple {
 
     Write-Verbose "Looping over Lines in Log Data and building custom object"
     ForEach($item in $cmLogData) {
-        
+
         $oLogLine = New-Object -TypeName PSCustomObject
-        
+
         # Get Log Text
         $logText = $rxLogData.Match($item)
-        
+
         if($logText.Success) {
             Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $logText.Groups[1].Value
             Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Component -Value $logText.Groups[2].Value
@@ -767,9 +767,9 @@ Function ConvertTo-LogSlothHTML {
     [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
 
     [System.Collections.Specialized.OrderedDictionary]$dataTableOptions = @{}
-    [void]$dataTableOptions.Add("paging", $true)    
+    [void]$dataTableOptions.Add("paging", $true)
     [void]$dataTableOptions.Add("pagingType","full_numbers")
-    [void]$dataTableOptions.Add("ordering", $false)    
+    [void]$dataTableOptions.Add("ordering", $false)
     [void]$dataTableOptions.Add("order",@())
     [void]$dataTableOptions.Add("lengthMenu",@(25, 50, 100, 250, 500, 1000))
     [void]$dataTableOptions.Add("pageLength", 500)
@@ -796,7 +796,7 @@ Function ConvertTo-LogSlothHTML {
                 if($rule.Lookup.IsMatch($entry.$prop)) {
                     $trClass = "rxMatch$($rule.ruleNum)"
                 }
-            }    
+            }
         }
 
         if($trClass) {
