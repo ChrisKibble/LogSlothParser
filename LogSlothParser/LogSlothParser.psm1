@@ -103,8 +103,8 @@ Function SanitizeByMatch {
 }
 
 Function Test-FormatRule {
-    
     [CmdLetBinding()]
+    [OutputType([Boolean])]
     Param(
         $Rule
     )
