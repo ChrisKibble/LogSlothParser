@@ -122,7 +122,7 @@ Function Test-FormatRule {
     }
 
     Try {
-        [regex]$Rule.Lookup
+        [void][regex]$Rule.Lookup
         Write-Verbose "RegEx Test Passed"
     } Catch {
         Write-Verbose "Lookup is not valid regex, returning false"
@@ -131,7 +131,7 @@ Function Test-FormatRule {
 
     If($rule.TextColor) {
         Try {
-            [System.Drawing.Color]$Rule.TextColor
+            [void][System.Drawing.Color]$Rule.TextColor
             Write-Verbose "TextColor Looks OK"
         } Catch {
             Write-Verbose "TextColor is not valid System.Drawing.Color, returning false"
@@ -141,7 +141,7 @@ Function Test-FormatRule {
 
     If($rule.BackgroundColor) {
         Try {
-            [System.Drawing.Color]$Rule.BackgroundColor
+            [void][System.Drawing.Color]$Rule.BackgroundColor
             Write-Verbose "BackgroundColor Looks OK"
         } Catch {
             Write-Verbose "BackgroundColor is not valid System.Drawing.Color, returning false"
