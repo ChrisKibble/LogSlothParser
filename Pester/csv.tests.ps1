@@ -6,7 +6,7 @@ BeforeAll {
 
 Describe "Ensure CSV Log Files Import Successfully" {
     
-    It "Validate CSV Import Works as Expected Importing File"  {          
+    It "Validate CSV Import Works as Expected Importing File"  {
         $log = Import-LogSloth -LogFile $csvFile -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
         $log.logData.count | Should -BeExactly 128    
@@ -17,7 +17,7 @@ Describe "Ensure CSV Log Files Import Successfully" {
         $logData = Get-Content $csvFile -Raw
         $log = Import-LogSLoth -LogData $logData -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 
@@ -25,11 +25,11 @@ Describe "Ensure CSV Log Files Import Successfully" {
         $logData = Get-Content $csvFile -Raw
         $log = $logData | Import-LogSloth -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 
-    It "Validate CSV Sanitization Import Works as Expected Importing File"  {          
+    It "Validate CSV Sanitization Import Works as Expected Importing File"  {
         $log = Import-LogSlothSanitized -LogFile $csvFile -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
         $log.logData.count | Should -BeExactly 128    
@@ -48,15 +48,15 @@ Describe "Ensure CSV Log Files Import Successfully" {
         $logData = Get-Content $csvFile -Raw
         $log = $logData | Import-LogSlothSanitized -SkipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 
-    It "Validate CSV Sanitization Import Works as Expected Importing Class"  {          
+    It "Validate CSV Sanitization Import Works as Expected Importing Class"  {
         $log = Import-LogSloth -LogFile $csvFile -SkipWarning
         $log = Import-LogSlothSanitized -LogObject $log -skipWarning
         $log.logData[0].'%%LineNo' | Should -BeExactly 1
-        $log.logData.count | Should -BeExactly 128    
+        $log.logData.count | Should -BeExactly 128
         $log.logType | Should -Be "CSV"
     }
 
