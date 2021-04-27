@@ -4,6 +4,10 @@ This function is used to export a log in another format for better viewing or sh
 
 The value passed to this function must be a log object created by `Import-LogSloth` or `Import-LogSlothSanitized`, you cannot pass a file or file data to this function.
 
+## Note on External Resources
+
+The HTML output of this function uses Javascript resources from various CDNs (specifically, at this time, jQuery and DataTables).  You will need Internet access to properly load these files. If there's a need for it, I may allow the user to point to local files, or use a simpler table export without all of the bells and whistles, at some point in the future.
+
 ## Sample Usage
 
 ```
