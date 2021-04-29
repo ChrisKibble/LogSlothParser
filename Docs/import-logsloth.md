@@ -31,6 +31,14 @@ LogDataRaw|The original text parsed from the log file.
 LogFormatting|Formatting rules that will be applied to your log if exported
 LogType|The type of log file that was detected (e.g. SCCM, CSV)
 
+# Defining Log Type
+
+In most scenarios, the module will automatically detect the log file type.  In some situations you may want to force the type of log that the data will be processed as. This can be done using the LogFormat Paramter.
+
+```
+$log = Import-LogSloth -LogFile DataFile.txt -LogType CSV
+```
+
 # Log Headers
 
 If importing a CSV or TSV file, you can use the `LogHeaders` parameter to define the headers for each column of data.  If you do not define this parameter, it will be assumed that the first row of data within the log file contains the headers.
