@@ -284,139 +284,160 @@ Function Get-LogSlothType {
 	Return [LogType]::Nothing
 }
 Function Import-LogSloth {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$LogData,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$LogFile,
-        [Array]$Headers = @(),
-        [System.Collections.ArrayList]$LogFormatting,
-        [Switch]$SkipFormatting,
-        [switch]$SkipWarning
-    )
-
-    Write-Verbose "Import-LogSloth Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSloth)" }
-
-    If($logFile) {
-        Try {
-            Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw -ErrorAction Stop
-        } Catch {
-            Throw "Error reading $logFile. $($_.Exception.Message)"
-        }
-    }
-
-    $log = [LogSloth]::New()
-
-    $logData = $logData.Trim()
-
-    $log.LogDataRaw = $LogData
-
-    Write-Verbose "Getting Log Type using Get-LogSlothType Function"
-    $log.logType = Get-LogSlothType -LogData $logData -skipWarning
-    Write-Verbose "Detected log type is $($log.logType)"
-
-    if($log.logType -eq [LogType]::Nothing) {
-        Throw "Cannot determine type of log to import"
-    }
-
-    $oLog = [System.Collections.ArrayList]::New(@())
-    Switch ($log.logType) {
-        "SCCM" {
-            Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData
-        }
-        "SCCMSimple" {
-            Write-Verbose "Importing SCCM Simple Log using Import-LogSCCMSimple Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogSCCMSimple -logData $logData
-        }
-        "W3CExtended" {
-            Write-Verbose "Importing W3C Extended Log using Import-LogW3CExtended Private Function"
-            [System.Collections.ArrayList]$oLog = Import-LogW3CExtended -logData $logData
-        }
-        "CSV" {
-            Write-Verbose "Importing CSV using Built-in PowerShell Function"
-            $ConvertParams = @{
-                InputObject = $logData
-                Delimiter = ","
-            }
-            if($headers) { $ConvertParams.Add("Header",$headers) }
-            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-        }
-        "TSV" {
-            Write-Verbose "Importing TSV using Built-in PowerShell Function"
-            $ConvertParams = @{
-                InputObject = $logData
-                Delimiter = "`t"
-            }
-            if($headers) { $ConvertParams.Add("Header",$headers) }
-            [System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-        }
-        default {
-            Throw "No action defined for this log type."
-        }
-    }
-
-    Write-Verbose "Adding Log Line Numbers to Array"
-
-    [int]$lineNumber = 0
-    $oLog.ForEach{
-        $lineNumber++
-        Add-Member -InputObject $_ -MemberType NoteProperty -Name "%%LineNo" -Value $lineNumber
-    }
-
-    $log.logData = $oLog
-
-    If(-Not($SkipFormatting)) {
-
-        If($LogFormatting) {
-
-            $newLogFormatting = [System.Collections.ArrayList]::New()
-            $okToImport = $true
-            ForEach($rule in $LogFormatting) {
-                If(-Not(Test-FormatRule $Rule)) {
-                    $okToImport = $false
-                }
-                If($okToImport) {
-                    $newRule = [LogSlothFormatting]::New()
-                    $newRule.Lookup = [regex]$rule.Lookup
-                    if($rule.TextColor) { $newRule.TextColor = [System.Drawing.Color]$rule.TextColor }
-                    if($rule.BackgroundCOlor) { $newRule.BackgroundColor = [System.Drawing.Color]$rule.BackgroundColor }
-                    [void]$newLogFormatting.Add($newRule)
-                }
-            }
-
-            if($okToImport) {
-                $log.LogFormatting = $newLogFormatting
-            } else {
-                Write-Error "Invalid rule(s) passed in LogFormatting.  Reverting to Default."
-                $LogFormatting = $null
-            }
-        }
-
-        If(-Not($LogFormatting)) {
-            Write-Verbose "Apply default coloring rules"
-
-            $FormatList = [System.Collections.ArrayList]::New()
-
-            $LogFormat = [LogSlothFormatting]::New()
-            $LogFormat.Lookup = "(?i)\bError\b"
-            $LogFormat.TextColor = [System.Drawing.Color]::Red
-            $FormatList.add($LogFormat) | Out-Null
-
-            $LogFormat = [LogSlothFormatting]::New()
-            $LogFormat.Lookup = "(?i)\bFail(?:ing|ure|)\b"
-            $LogFormat.TextColor = [System.Drawing.Color]::Red
-            $FormatList.add($LogFormat) | Out-Null
-
-            $log.LogFormatting = $FormatList
-        }
-    }
-
-    Write-Verbose "Function is complete, Returning."
-    Return $log
+	[CmdletBinding(DefaultParameterSetName = 'LogFile')]
+	Param
+	(
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   HelpMessage = 'String of raw data to be processed')]
+		[String]$LogData,
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $true,
+				   ValueFromPipeline = $false,
+				   HelpMessage = 'Path to Log File to Process')]
+		[System.IO.FileInfo]$LogFile,
+		[Parameter(HelpMessage = 'Optional headers when importing delimited logs')]
+		[Array]$Headers = @(),
+		[Parameter(HelpMessage = 'Optional LogFormatting Array (See extended help in Docs)')]
+		[System.Collections.ArrayList]$LogFormatting,
+		[Parameter(HelpMessage = 'Do not format the output data when exporting')]
+		[Switch]$SkipFormatting,
+		[Parameter(HelpMessage = 'Do not display warnings in console')]
+		[switch]$SkipWarning
+	)
+	
+	Write-Verbose "Import-LogSloth Function is beginning"
+	If (-Not ($skipWarning)) {
+		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSloth)"
+	}
+	
+	If ($logFile) {
+		Try {
+			Write-Verbose "LogFile Parameter Defined, Importing $logFile"
+			$logData = Get-Content $logFile -Raw -ErrorAction Stop
+		} Catch {
+			Throw "Error reading $logFile. $($_.Exception.Message)"
+		}
+	}
+	
+	$log = [LogSloth]::New()
+	
+	$logData = $logData.Trim()
+	
+	$log.LogDataRaw = $LogData
+	
+	Write-Verbose "Getting Log Type using Get-LogSlothType Function"
+	$log.logType = Get-LogSlothType -LogData $logData -skipWarning
+	Write-Verbose "Detected log type is $($log.logType)"
+	
+	If ($log.logType -eq [LogType]::Nothing) {
+		Throw "Cannot determine type of log to import"
+	}
+	
+	$oLog = [System.Collections.ArrayList]::New(@())
+	Switch ($log.logType) {
+		"SCCM" {
+			Write-Verbose "Importing SCCM Log using Import-LogSCCM Private Function"
+			[System.Collections.ArrayList]$oLog = Import-LogSCCM -logData $logData
+		}
+		"SCCMSimple" {
+			Write-Verbose "Importing SCCM Simple Log using Import-LogSCCMSimple Private Function"
+			[System.Collections.ArrayList]$oLog = Import-LogSCCMSimple -logData $logData
+		}
+		"W3CExtended" {
+			Write-Verbose "Importing W3C Extended Log using Import-LogW3CExtended Private Function"
+			[System.Collections.ArrayList]$oLog = Import-LogW3CExtended -logData $logData
+		}
+		"CSV" {
+			Write-Verbose "Importing CSV using Built-in PowerShell Function"
+			$ConvertParams = @{
+				InputObject = $logData
+				Delimiter   = ","
+			}
+			If ($headers) {
+				$ConvertParams.Add("Header", $headers)
+			}
+			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+		}
+		"TSV" {
+			Write-Verbose "Importing TSV using Built-in PowerShell Function"
+			$ConvertParams = @{
+				InputObject = $logData
+				Delimiter   = "`t"
+			}
+			If ($headers) {
+				$ConvertParams.Add("Header", $headers)
+			}
+			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+		}
+		default {
+			Throw "No action defined for this log type."
+		}
+	}
+	
+	Write-Verbose "Adding Log Line Numbers to Array"
+	
+	[int]$lineNumber = 0
+	$oLog.ForEach{
+		$lineNumber++
+		Add-Member -InputObject $_ -MemberType NoteProperty -Name "%%LineNo" -Value $lineNumber
+	}
+	
+	$log.logData = $oLog
+	
+	If (-Not ($SkipFormatting)) {
+		
+		If ($LogFormatting) {
+			
+			$newLogFormatting = [System.Collections.ArrayList]::New()
+			$okToImport = $true
+			ForEach ($rule In $LogFormatting) {
+				If (-Not (Test-FormatRule $Rule)) {
+					$okToImport = $false
+				}
+				If ($okToImport) {
+					$newRule = [LogSlothFormatting]::New()
+					$newRule.Lookup = [regex]$rule.Lookup
+					If ($rule.TextColor) {
+						$newRule.TextColor = [System.Drawing.Color]$rule.TextColor
+					}
+					If ($rule.BackgroundCOlor) {
+						$newRule.BackgroundColor = [System.Drawing.Color]$rule.BackgroundColor
+					}
+					[void]$newLogFormatting.Add($newRule)
+				}
+			}
+			
+			If ($okToImport) {
+				$log.LogFormatting = $newLogFormatting
+			} Else {
+				Write-Error "Invalid rule(s) passed in LogFormatting.  Reverting to Default."
+				$LogFormatting = $null
+			}
+		}
+		
+		If (-Not ($LogFormatting)) {
+			Write-Verbose "Apply default coloring rules"
+			
+			$FormatList = [System.Collections.ArrayList]::New()
+			
+			$LogFormat = [LogSlothFormatting]::New()
+			$LogFormat.Lookup = "(?i)\bError\b"
+			$LogFormat.TextColor = [System.Drawing.Color]::Red
+			$FormatList.add($LogFormat) | Out-Null
+			
+			$LogFormat = [LogSlothFormatting]::New()
+			$LogFormat.Lookup = "(?i)\bFail(?:ing|ure|)\b"
+			$LogFormat.TextColor = [System.Drawing.Color]::Red
+			$FormatList.add($LogFormat) | Out-Null
+			
+			$log.LogFormatting = $FormatList
+		}
+	}
+	
+	Write-Verbose "Function is complete, Returning."
+	Return $log
 }
 
 Function Import-LogSlothSanitized {
