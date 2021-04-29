@@ -57,49 +57,60 @@ Class LogSlothFormatting {
 }
 
 Function Get-SanitizedDataByMatch {
-    Param(
-        [string]$inputData,
-        [string]$rx,
-        [string]$stub,
-        [switch]$quoted = $false
-    )
-
-    Write-Verbose "Private Get-SanitizedDataByMatch Function is beginning"
-
-    Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
-    $rxLookup = [regex]::new($rx)
-
-    Write-Verbose "Getting Matches for Input Data"
-    $matchList = $rxLookup.matches($inputData)
-
-    Write-Verbose "Reducing to Unique List of Matches"
-    $uniqueMatchList = New-Object -TypeName System.Collections.Generic.HashSet[String]
-    [void]$matchList.ForEach{ $uniqueMatchList.Add($_.Groups[1].Value) }
-
-    Write-Verbose "Completed Getting Matches for Input Data"
-
-    $replList = [System.Collections.ArrayList]::New()
-
-    Write-Verbose "Looping Over Unique Replacement Array to gather list of Text Strings to Replace"
-    $index = 0
-
-    ForEach($m in $uniqueMatchList | Where-Object { $_ -ne "" }) {
-        $index++
-        $replText = "$stub$index"
-        if($quoted) { $replText = "`"$replText`""}
-        Write-Verbose "... Adding '$m' => '$replText' using stub '$stub'"
-        $replList.Add(
-            [PSCustomObject]@{
-                "OriginalText" = $m
-                "ReplacementText" = $replText
-                "Stub" = $stub
-            }
-        ) | Out-Null
-    }
-
-    Write-Verbose "Private Get-SanitizedDataByMatch Function is done"
-
-    Return $replList
+	Param
+	(
+		[Parameter(Mandatory = $true)]
+		[string]$InputData,
+		[Parameter(Mandatory = $true)]
+		[string]$RX,
+		[Parameter(Mandatory = $true)]
+		[string]$Stub,
+		[Parameter(Mandatory = $false)]
+		[switch]$Quoted = $false
+	)
+	
+	Write-Verbose "Private Get-SanitizedDataByMatch Function is beginning"
+	
+	Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
+	$rxLookup = [regex]::new($rx)
+	
+	Write-Verbose "Getting Matches for Input Data"
+	$matchList = $rxLookup.matches($inputData)
+	
+	Write-Verbose "Reducing to Unique List of Matches"
+	$uniqueMatchList = New-Object -TypeName System.Collections.Generic.HashSet[String]
+	[void]$matchList.ForEach{
+		$uniqueMatchList.Add($_.Groups[1].Value)
+	}
+	
+	Write-Verbose "Completed Getting Matches for Input Data"
+	
+	$replList = [System.Collections.ArrayList]::New()
+	
+	Write-Verbose "Looping Over Unique Replacement Array to gather list of Text Strings to Replace"
+	$index = 0
+	
+	ForEach ($m In $uniqueMatchList | Where-Object {
+			$_ -ne ""
+		}) {
+		$index++
+		$replText = "$stub$index"
+		If ($quoted) {
+			$replText = "`"$replText`""
+		}
+		Write-Verbose "... Adding '$m' => '$replText' using stub '$stub'"
+		$replList.Add(
+			[PSCustomObject]@{
+				"OriginalText"    = $m
+				"ReplacementText" = $replText
+				"Stub"		      = $stub
+			}
+		) | Out-Null
+	}
+	
+	Write-Verbose "Private Get-SanitizedDataByMatch Function is done"
+	
+	Return $replList
 }
 
 Function Test-FormatRule {
