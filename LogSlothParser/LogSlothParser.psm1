@@ -297,6 +297,8 @@ Function Import-LogSloth {
 				   ValueFromPipeline = $false,
 				   HelpMessage = 'Path to Log File to Process')]
 		[System.IO.FileInfo]$LogFile,
+		[Parameter(HelpMessage = 'Format of Log File (else auto-detect)')]
+		[LogType]$LogType = [LogType]::Nothing,
 		[Parameter(HelpMessage = 'Optional headers when importing delimited logs')]
 		[Array]$Headers = @(),
 		[Parameter(HelpMessage = 'Optional LogFormatting Array (See extended help in Docs)')]
@@ -326,11 +328,16 @@ Function Import-LogSloth {
 	$logData = $logData.Trim()
 	
 	$log.LogDataRaw = $LogData
-	
-	Write-Verbose "Getting Log Type using Get-LogSlothType Function"
-	$log.logType = Get-LogSlothType -LogData $logData -skipWarning
-	Write-Verbose "Detected log type is $($log.logType)"
-	
+		
+	If($LogType -eq [LogType]::Nothing) {
+		Write-Verbose "Getting Log Type using Get-LogSlothType Function"
+		$log.logType = Get-LogSlothType -LogData $logData -skipWarning
+		Write-Verbose "Detected log type is $($log.logType)"
+	} else {
+		Write-Verbose "Using user defined LogType $LogType"		
+		$log.LogType = $LogType
+	}
+
 	If ($log.logType -eq [LogType]::Nothing) {
 		Throw "Cannot determine type of log to import"
 	}
@@ -465,7 +472,9 @@ Function Import-LogSlothSanitized {
 				   Mandatory = $false)]
 		[Parameter(ParameterSetName = 'LogFile',
 				   Mandatory = $false)]
-		[SanitizeType]$Sanitize = [SanitizeType]::All,
+		[Parameter(HelpMessage = 'Format of Log File (else auto-detect)')]
+		[LogType]$LogType = [LogType]::Nothing,
+				   [SanitizeType]$Sanitize = [SanitizeType]::All,
 		[Parameter(ParameterSetName = 'LogClass',
 				   Mandatory = $false,
 				   HelpMessage = 'Sanitization prefix (default: "sanitized")')]
@@ -517,8 +526,14 @@ Function Import-LogSlothSanitized {
 		$logData = $LogObject.LogDataRaw
 	}
 	
-	Write-Verbose "Getting Log Type"
-	$logType = Get-LogSlothType -LogData $LogData -SkipWarning
+	If($LogType -eq [LogType]::Nothing) {
+		Write-Verbose "Getting Log Type using Get-LogSlothType Function"
+		$log.logType = Get-LogSlothType -LogData $logData -skipWarning
+		Write-Verbose "Detected log type is $($log.logType)"
+	} else {
+		Write-Verbose "Using user defined LogType $LogType"		
+		$log.LogType = $LogType
+	}
 	
 	If ($LogType -eq [LogType]::Nothing) {
 		Throw "Missing LogType"
