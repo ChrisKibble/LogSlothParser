@@ -56,7 +56,7 @@ Class LogSlothFormatting {
     [System.Drawing.Color]$BackgroundColor
 }
 
-Function SanitizeByMatch {
+Function Get-SanitizedDataByMatch {
     Param(
         [string]$inputData,
         [string]$rx,
@@ -64,7 +64,7 @@ Function SanitizeByMatch {
         [switch]$quoted = $false
     )
 
-    Write-Verbose "Private SanitizeByMatch Function is beginning"
+    Write-Verbose "Private Get-SanitizedDataByMatch Function is beginning"
 
     Write-Verbose "Initalizing RegEx and building Replacement ArrayList"
     $rxLookup = [regex]::new($rx)
@@ -97,7 +97,7 @@ Function SanitizeByMatch {
         ) | Out-Null
     }
 
-    Write-Verbose "Private SanitizeByMatch Function is done"
+    Write-Verbose "Private Get-SanitizedDataByMatch Function is done"
 
     Return $replList
 }
