@@ -886,127 +886,143 @@ Function Convert-Color2Hex {
 }
 
 Function ConvertTo-LogSlothHTML {
-    Param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [LogSloth]$LogObject,
-        [switch]$SkipWarning,
-        [switch]$IncludeRawLog
-    )
-
-    Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
-
-    Write-Verbose "Excluding Meta Properties from Export"
-    $LogObject.LogData = $LogObject.LogData | Select-Object -Property * -ExcludeProperty "%%*"
-
-    # Build Collection of Formatting Rules
-    $cssFormatRules = [System.Collections.ArrayList]::New()
-    $cssIndex = 0
-    ForEach($rule in $LogObject.LogFormatting) {
-        $thisRule = [PSCustomObject]@{
-            RuleNum = $cssIndex
-            Lookup = $rule.Lookup
-            TextColor = $null
-            BackgroundColor = $null
-        }
-        If($rule.TextColor -ne [System.Drawing.Color]::Empty) {
-            Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "TextColor" -Value (Convert-Color2Hex $rule.TextColor) -Force
-        }
-        If($rule.BackgroundColor -ne [System.Drawing.Color]::Empty) {
-            Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "BackgroundColor" -Value (Convert-Color2Hex $rule.BackgroundColor) -Force
-        }
-        $cssFormatRules.Add($thisRule) | Out-Null
-        $cssIndex++
-    }
-
-    [System.Collections.ArrayList]$css = @()
-    [void]$css.Add("#LogTable td { font-family: verdana; font-size: 12px; }")
-    [void]$css.Add("#LogTable th { font-family: verdana; font-size: 12px; font-weight: bold; text-align: left; }")
-
-    ForEach($rule in $cssFormatRules) {
-        $ruleText = ""
-        If($rule.BackgroundColor) { $ruleText += "background-color: $($rule.BackgroundColor); " }
-        If($rule.TextColor) { $ruleText += "color: $($rule.TextColor); " }
-        [void]$css.Add("#LogTable tr.rxMatch$($rule.RuleNum) { $ruleText }")
-    }
-
-    if($IncludeRawLog) {
-        [void]$css.Add("#LogRaw { font-family: 'courier new'; font-size: 12px; width: 100%; height: 200px; margin-top: 20px; white-space: nowrap; overflow: auto;")
-    }
-
-    [System.Collections.ArrayList]$links = @()
-    [void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
-
-    [System.Collections.Specialized.OrderedDictionary]$dataTableOptions = @{}
-    [void]$dataTableOptions.Add("paging", $true)
-    [void]$dataTableOptions.Add("pagingType","full_numbers")
-    [void]$dataTableOptions.Add("ordering", $false)
-    [void]$dataTableOptions.Add("order",@())
-    [void]$dataTableOptions.Add("lengthMenu",@(25, 50, 100, 250, 500, 1000))
-    [void]$dataTableOptions.Add("pageLength", 500)
-
-    [System.Collections.ArrayList]$scripts = @()
-    [void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
-    [void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>')
-    [void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable( $($dataTableOptions | ConvertTo-Json) ); } );</script>")
-
-    [System.Collections.ArrayList]$thead = @()
-    [void]$thead.AddRange(@("<thead>","<tr>"))
-    ForEach($prop in $logObject.LogData[0].psobject.Properties.Name) {
-        [void]$thead.Add("<th>$([System.Web.HttpUtility]::HTMLEncode($prop))</th>")
-    }
-    [void]$thead.AddRange(@("</tr>","</thead>"))
-
-    [System.Collections.ArrayList]$tbody = @()
-    ForEach($entry in $logObject.LogData) { #ForEach Line in the Log File
-
-        # Determine if we need to apply any style to this row based on RegEx Rules
-        $trClass = ""
-        ForEach($rule in $cssFormatRules) {
-            ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) { #ForEach Property (Field/Column)
-                if($rule.Lookup.IsMatch($entry.$prop)) {
-                    $trClass = "rxMatch$($rule.ruleNum)"
-                }
-            }
-        }
-
-        if($trClass) {
-            [void]$tbody.Add("<tr class=`"$trClass`">")
-        } else {
-            [void]$tbody.Add("<tr>")
-        }
-
-        ForEach($prop in $LogObject.LogData[0].psobject.Properties.Name) { #ForEach Property (Field/Column)
-            [void]$tbody.Add("<td>$([System.Web.HttpUtility]::HTMLEncode($entry.$prop))</td>")
-        }
-        [void]$tbody.Add("</tr>")
-    }
-
-    [System.Collections.ArrayList]$html = @()
-    [void]$html.Add("<!DOCTYPE html>")
-    [void]$html.AddRange(@("<html lang=`"en`">","<head>"))
-    [void]$html.Add("<title>LogSloth Log Export</title>")
-    [void]$html.AddRange($links)
-    [void]$html.AddRange($scripts)
-    [void]$html.AddRange(@("<style>",$css,"</style>"))
-    [void]$html.Add("</head>")
-    [void]$html.Add("<body>")
-    [void]$html.Add('<table id="LogTable">')
-    [void]$html.AddRange($thead)
-    [void]$html.AddRange($tbody)
-    [void]$html.Add("</table>")
-
-    if($IncludeRawLog) {
-        [void]$html.Add("<textarea id=`"LogRaw`">")
-        [void]$html.Add($logObject.LogDataRaw)
-        [void]$html.Add("</textarea>")
-    }
-
-    [void]$html.Add("</body>")
-    [void]$html.Add("</html>")
-
-    Write-Verbose "ConvertTo-LogSlothHTML Function is returning"
-    Return $html
+	[CmdletBinding()]
+	Param
+	(
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   HelpMessage = 'Object returned by Import-LogData or Import-LogDataSanitized')]
+		[LogSloth]$LogObject,
+		[Parameter(HelpMessage = 'Do not display warnings in console')]
+		[switch]$SkipWarning,
+		[Parameter(HelpMessage = 'Define if the raw (or sanitized) data from the original log should be included in the conversion.')]
+		[switch]$IncludeRawLog
+	)
+	
+	Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
+	If (-Not ($skipWarning)) {
+		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
+	}
+	
+	Write-Verbose "Excluding Meta Properties from Export"
+	$LogObject.LogData = $LogObject.LogData | Select-Object -Property * -ExcludeProperty "%%*"
+	
+	# Build Collection of Formatting Rules
+	$cssFormatRules = [System.Collections.ArrayList]::New()
+	$cssIndex = 0
+	ForEach ($rule In $LogObject.LogFormatting) {
+		$thisRule = [PSCustomObject]@{
+			RuleNum = $cssIndex
+			Lookup  = $rule.Lookup
+			TextColor = $null
+			BackgroundColor = $null
+		}
+		If ($rule.TextColor -ne [System.Drawing.Color]::Empty) {
+			Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "TextColor" -Value (Convert-Color2Hex $rule.TextColor) -Force
+		}
+		If ($rule.BackgroundColor -ne [System.Drawing.Color]::Empty) {
+			Add-Member -InputObject $thisRule -MemberType NoteProperty -Name "BackgroundColor" -Value (Convert-Color2Hex $rule.BackgroundColor) -Force
+		}
+		$cssFormatRules.Add($thisRule) | Out-Null
+		$cssIndex++
+	}
+	
+	[System.Collections.ArrayList]$css = @()
+	[void]$css.Add("#LogTable td { font-family: verdana; font-size: 12px; }")
+	[void]$css.Add("#LogTable th { font-family: verdana; font-size: 12px; font-weight: bold; text-align: left; }")
+	
+	ForEach ($rule In $cssFormatRules) {
+		$ruleText = ""
+		If ($rule.BackgroundColor) {
+			$ruleText += "background-color: $($rule.BackgroundColor); "
+		}
+		If ($rule.TextColor) {
+			$ruleText += "color: $($rule.TextColor); "
+		}
+		[void]$css.Add("#LogTable tr.rxMatch$($rule.RuleNum) { $ruleText }")
+	}
+	
+	If ($IncludeRawLog) {
+		[void]$css.Add("#LogRaw { font-family: 'courier new'; font-size: 12px; width: 100%; height: 200px; margin-top: 20px; white-space: nowrap; overflow: auto;")
+	}
+	
+	[System.Collections.ArrayList]$links = @()
+	[void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
+	
+	[System.Collections.Specialized.OrderedDictionary]$dataTableOptions = @{
+	}
+	[void]$dataTableOptions.Add("paging", $true)
+	[void]$dataTableOptions.Add("pagingType", "full_numbers")
+	[void]$dataTableOptions.Add("ordering", $false)
+	[void]$dataTableOptions.Add("order", @())
+	[void]$dataTableOptions.Add("lengthMenu", @(25, 50, 100, 250, 500, 1000))
+	[void]$dataTableOptions.Add("pageLength", 500)
+	
+	[System.Collections.ArrayList]$scripts = @()
+	[void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
+	[void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>')
+	[void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable( $($dataTableOptions | ConvertTo-Json) ); } );</script>")
+	
+	[System.Collections.ArrayList]$thead = @()
+	[void]$thead.AddRange(@("<thead>", "<tr>"))
+	ForEach ($prop In $logObject.LogData[0].psobject.Properties.Name) {
+		[void]$thead.Add("<th>$([System.Web.HttpUtility]::HTMLEncode($prop))</th>")
+	}
+	[void]$thead.AddRange(@("</tr>", "</thead>"))
+	
+	[System.Collections.ArrayList]$tbody = @()
+	ForEach ($entry In $logObject.LogData) {
+		#ForEach Line in the Log File
+		
+		# Determine if we need to apply any style to this row based on RegEx Rules
+		$trClass = ""
+		ForEach ($rule In $cssFormatRules) {
+			ForEach ($prop In $LogObject.LogData[0].psobject.Properties.Name) {
+				#ForEach Property (Field/Column)
+				If ($rule.Lookup.IsMatch($entry.$prop)) {
+					$trClass = "rxMatch$($rule.ruleNum)"
+				}
+			}
+		}
+		
+		If ($trClass) {
+			[void]$tbody.Add("<tr class=`"$trClass`">")
+		} Else {
+			[void]$tbody.Add("<tr>")
+		}
+		
+		ForEach ($prop In $LogObject.LogData[0].psobject.Properties.Name) {
+			#ForEach Property (Field/Column)
+			[void]$tbody.Add("<td>$([System.Web.HttpUtility]::HTMLEncode($entry.$prop))</td>")
+		}
+		[void]$tbody.Add("</tr>")
+	}
+	
+	[System.Collections.ArrayList]$html = @()
+	[void]$html.Add("<!DOCTYPE html>")
+	[void]$html.AddRange(@("<html lang=`"en`">", "<head>"))
+	[void]$html.Add("<title>LogSloth Log Export</title>")
+	[void]$html.AddRange($links)
+	[void]$html.AddRange($scripts)
+	[void]$html.AddRange(@("<style>", $css, "</style>"))
+	[void]$html.Add("</head>")
+	[void]$html.Add("<body>")
+	[void]$html.Add('<table id="LogTable">')
+	[void]$html.AddRange($thead)
+	[void]$html.AddRange($tbody)
+	[void]$html.Add("</table>")
+	
+	If ($IncludeRawLog) {
+		[void]$html.Add("<textarea id=`"LogRaw`">")
+		[void]$html.Add($logObject.LogDataRaw)
+		[void]$html.Add("</textarea>")
+	}
+	
+	[void]$html.Add("</body>")
+	[void]$html.Add("</html>")
+	
+	Write-Verbose "ConvertTo-LogSlothHTML Function is returning"
+	Return $html
 }
 
 Function Export-LogSlothLog {
