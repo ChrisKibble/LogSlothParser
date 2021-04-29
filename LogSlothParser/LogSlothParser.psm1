@@ -213,12 +213,19 @@ Function Get-LogSlothType {
 	$rxSCCM = [regex]::new('<!\[LOG')
 	$rxSCCMSimple = [regex]::new('(?msi).*? \$\$<.*?><.*?>')
 	$rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
-	
+	$rxCLFAccess = [regex]::New('^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)) .*? .*? \[.*?\] "(.*?)" \d{3} ')
+
 	$firstLineOfData = $($logData -split "`n") | Where-Object {
 		$_ -notlike "ROLLOVER*"
 	} | Select-Object -First 1
 	
 	Write-Verbose "Using RegEx to Determine Log Type"
+
+	If($rxCLFAccess.IsMatch($firstLineOfData)) {
+		Write-Verbose "RegEx Confirmation that Log is Common Log Format (CLR) Access.  Returning."
+		Return [LogType]::CLFAccess
+	}
+
 	Switch ($logData) {
 		# SCCM
 		{
@@ -378,6 +385,18 @@ Function Import-LogSloth {
 			}
 			If ($headers) {
 				$ConvertParams.Add("Header", $headers)
+			}
+			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+		}
+		"CLFAccess" {
+			Write-Verbose "Importing CLF Access Log File using Built-in PowerShell Function"
+			If(-Not($Headers)) {
+				$Headers = @("RemoteHost","Ident","User","DateTime","Request","Status","Size")
+			}
+			$ConvertParams = @{
+				InputObject = $LogData -replace '\[(.*?)\]','"$1"'
+				Delimiter = " "
+				Header = $Headers
 			}
 			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
 		}
