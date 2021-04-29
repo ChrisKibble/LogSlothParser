@@ -216,6 +216,7 @@ Function Get-LogSlothType {
 	} | Select-Object -First 1
 	
 	Write-Verbose "Using RegEx to Determine Log Type"
+	## TODO: This swich should be broken out - we're evaluating $LogData but then ignore it for both the two SCCM checks.
 	Switch ($logData) {
 		# SCCM
 		{
