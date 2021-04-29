@@ -468,7 +468,7 @@ Function Import-LogSlothSanitized {
 		[SanitizeType]$Sanitize = [SanitizeType]::All,
 		[Parameter(ParameterSetName = 'LogClass',
 				   Mandatory = $false,
-				   HelpMessage = 'Sanitization prefix (default: 'sanitized')')]
+				   HelpMessage = 'Sanitization prefix (default: "sanitized")')]
 		[Parameter(ParameterSetName = 'LogData',
 				   Mandatory = $false)]
 		[Parameter(ParameterSetName = 'LogFile',
@@ -746,63 +746,62 @@ Function Import-LogSlothSanitized {
 }
 
 Function Import-LogSCCM {
-
-    [CmdLetBinding()]
-    Param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $LogData
-    )
-
-    Write-Verbose "Private Import-LogSCCM Function is beginning"
-
-    ## Fixes issue where CM adds unnecessary CRs when dumping data from an error report into a log
-    $logData = $logData -replace '(?<!">)\r\n',"`n"
-
-    ## SCCM breaks log files up by CR (\r).  Multiline within a single log line are broken up by NewLine (\n)
-    $cmLogData = $logData -split "`r"
-
-    $logArray = [System.Collections.ArrayList]::New()
-
-    Write-Verbose "Building RegEx Variables"
-    $rxLogText = [regex]::new('(?msi)<!\[LOG\[(.*)]LOG]!>')
-    $rxLogTime = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?time="(.*?)"')
-    $rxLogDate = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?date="(.*?)"')
-    $rxLogComponent = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?component="(.*?)"')
-    $rxLogContext = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?context="(.*?)"')
-    $rxLogType = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?type="(.*?)"')
-    $rxLogThread = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?thread="(.*?)"')
-    $rxLogFile = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?file="(.*?)"')
-
-    Write-Verbose "Looping over Lines in Log Data and building custom object"
-    ForEach($item in $cmLogData) {
-        $oLogLine = New-Object -TypeName PSCustomObject
-
-        # Get Log Text
-        $logText = $rxLogText.Match($item)
-        $logTime = $rxLogTime.Match($item)
-        $logDate = $rxLogDate.Match($item)
-        $logComponent = $rxLogComponent.Match($item)
-        $logContext = $rxLogContext.Match($item)
-        $logType = $rxLogType.Match($item)
-        $logThread = $rxLogThread.Match($item)
-        $logFile = $rxLogFile.Match($item)
-
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $logText.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Component -Value $logComponent.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name DateTime -Value "$($logDate.Groups[1].Value) $($logTime.Groups[1].Value)"
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Thread  -Value $logThread.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Context -Value $logContext.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Type -Value $logType.Groups[1].Value
-        Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name File  -Value $logFile.Groups[1].Value
-
-        $logArray.add($oLogLine) | Out-Null
-    }
-    Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
-
-    Write-Verbose "Function returning Log Array"
-    Return $logArray
-
+	[CmdletBinding()]
+	Param
+	(
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'String of log data to import')]
+		[string]$LogData
+	)
+	
+	Write-Verbose "Private Import-LogSCCM Function is beginning"
+	
+	## Fixes issue where CM adds unnecessary CRs when dumping data from an error report into a log
+	$logData = $logData -replace '(?<!">)\r\n', "`n"
+	
+	## SCCM breaks log files up by CR (\r).  Multiline within a single log line are broken up by NewLine (\n)
+	$cmLogData = $logData -split "`r"
+	
+	$logArray = [System.Collections.ArrayList]::New()
+	
+	Write-Verbose "Building RegEx Variables"
+	$rxLogText = [regex]::new('(?msi)<!\[LOG\[(.*)]LOG]!>')
+	$rxLogTime = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?time="(.*?)"')
+	$rxLogDate = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?date="(.*?)"')
+	$rxLogComponent = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?component="(.*?)"')
+	$rxLogContext = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?context="(.*?)"')
+	$rxLogType = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?type="(.*?)"')
+	$rxLogThread = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?thread="(.*?)"')
+	$rxLogFile = [regex]::new('(?msi)<!\[LOG\[.*?]LOG]!><.*?file="(.*?)"')
+	
+	Write-Verbose "Looping over Lines in Log Data and building custom object"
+	ForEach ($item In $cmLogData) {
+		$oLogLine = New-Object -TypeName PSCustomObject
+		
+		# Get Log Text
+		$logText = $rxLogText.Match($item)
+		$logTime = $rxLogTime.Match($item)
+		$logDate = $rxLogDate.Match($item)
+		$logComponent = $rxLogComponent.Match($item)
+		$logContext = $rxLogContext.Match($item)
+		$logType = $rxLogType.Match($item)
+		$logThread = $rxLogThread.Match($item)
+		$logFile = $rxLogFile.Match($item)
+		
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Text -Value $logText.Groups[1].Value
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Component -Value $logComponent.Groups[1].Value
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name DateTime -Value "$($logDate.Groups[1].Value) $($logTime.Groups[1].Value)"
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Thread -Value $logThread.Groups[1].Value
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Context -Value $logContext.Groups[1].Value
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name Type -Value $logType.Groups[1].Value
+		Add-Member -InputObject $oLogLine -MemberType NoteProperty -Name File -Value $logFile.Groups[1].Value
+		
+		$logArray.add($oLogLine) | Out-Null
+	}
+	Write-Verbose "Completed Looping over Lines in Log Data and building custom object"
+	
+	Write-Verbose "Function returning Log Array"
+	Return $logArray
 }
 
 Function Import-LogSCCMSimple {
