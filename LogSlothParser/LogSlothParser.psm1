@@ -10,6 +10,7 @@ Enum LogType {
 
 Enum LogSlothExportType {
     HTML
+	Markdown
 }
 
 [Flags()]
@@ -1119,6 +1120,13 @@ Function Export-LogSlothLog {
 		"HTML" {
 			Try {
 				$LogObject | ConvertTo-LogSlothHTML -IncludeRawLog:$includeRawLog -SkipWarning | Out-File $Path -Encoding utf8 -NoClobber:$(-Not $Force) -ErrorAction Stop
+			} Catch {
+				Throw "Unable to export file. $($_.Exception.Message)"
+			}
+		}
+		"Markdown" {
+			Try {
+				$logObject | ConvertTo-LogSlothMarkdown -SkipWarning | Out-File $Path -Encoding utf8 -NoClobber:$(-Not $Force) -ErrorAction Stop
 			} Catch {
 				Throw "Unable to export file. $($_.Exception.Message)"
 			}
