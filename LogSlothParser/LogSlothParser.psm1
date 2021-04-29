@@ -1041,6 +1041,46 @@ Function ConvertTo-LogSlothHTML {
 	Return $html
 }
 
+Function ConvertTo-LogSlothMarkdown {
+	[CmdletBinding()]
+	Param
+	(
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   HelpMessage = 'Object returned by Import-LogData or Import-LogDataSanitized')]
+		[LogSloth]$LogObject,
+		[Parameter(HelpMessage = 'Do not display warnings in console')]
+		[switch]$SkipWarning
+	)
+	
+	Write-Verbose "ConvertTo-LogSlothMarkdown Function is beginning"
+	If (-Not ($skipWarning)) {
+		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
+	}
+	
+	Write-Verbose "Excluding Meta Properties from Export"
+	$LogObject.LogData = $LogObject.LogData | Select-Object -Property * -ExcludeProperty "%%*"
+	
+	$markDown = [System.Collections.ArrayList]::New()
+
+	# Add table header
+	$mdHeader = $($logObject.LogData[0].psobject.Properties.Name -replace "\|","\|") -join "|"
+
+	# Add table border line
+	$mdTableBorder = "-|"*($logObject.LogData[0].psobject.Properties.Name.Count-1) + "-"
+
+	[void]$markDown.Add($mdHeader)
+	[void]$markDown.Add($mdTableBorder)
+
+	ForEach ($entry In $logObject.LogData) {
+		$mdTableLine = $($entry.psobject.Properties.Value -replace "\|","\|") -join "|"
+		[void]$markDown.Add($mdTableLine)
+	}
+
+	Write-Verbose "ConvertTo-LogSlothHTML Function is returning"
+	Return $markDown
+}
+
 Function Export-LogSlothLog {
 	[CmdletBinding()]
 	Param
@@ -1090,4 +1130,4 @@ Function Export-LogSlothLog {
 }
 
 # New changes here should be added to the manifest as well.
-Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType,Export-LogSlothLog,ConvertTo-LogSlothHTML
+Export-ModuleMember -Function Import-LogSloth,Import-LogSlothSanitized,Get-LogSlothType,Export-LogSlothLog,ConvertTo-LogSlothHTML,ConvertTo-LogSlothMarkdown
