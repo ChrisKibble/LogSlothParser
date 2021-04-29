@@ -174,93 +174,114 @@ Function Test-FormatRule {
 }
 
 Function Get-LogSlothType {
-
-    [Cmdletbinding()]
-    Param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$LogData,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$LogFile,
-        [switch]$SkipWarning
-    )
-
-    Write-Verbose "Get-LogSlothType Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Get-LogSlothType)" }
-
-    If($logFile) {
-        Try {
-            Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw -ErrorAction Stop
-        } Catch {
-            Throw "Error reading $logFile $($_.Exception.Message)"
-        }
-    }
-
-    Write-Verbose "Initalizing RegEx Checks"
-
-    $rxSCCM = [regex]::new('<!\[LOG')
-    $rxSCCMSimple = [regex]::new('(?msi).*? \$\$<.*?><.*?>')
-    $rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
-
-    $firstLineOfData = $($logData -split "`n") | Where-Object { $_ -notlike "ROLLOVER*" } | Select-Object -First 1
-
-    Write-Verbose "Using RegEx to Determine Log Type"
-    Switch ($logData) {
-        # SCCM
-        { $rxSCCM.IsMatch($firstLineOfData)  } {
-            Write-Verbose "RegEx Confirmation that Log is SCCM.  Returning."
-            Return [LogType]::SCCM; break
-        }
-
-        # SCCM Simple
-        { $rxSCCMSimple.IsMatch($firstLineOfData) } {
-            Write-Verbose "RegEx Confirmation that Log is SCCM Simple.  Returning."
-            Return [LogType]::SCCMSimple; break
-        }
-
-        # W3C Extended
-        { $rxW3CExtended.IsMatch($logData) } {
-            Write-Verbose "RegEx Confirmation that Log is W3CExtended.  Returning."
-            Return [LogType]::W3CExtended; break
-        }
-
-    }
-
-    # Not a pre-defined type, let's make some best guesses
-    Try {
-        Write-Verbose "Converting Log Data to CSV"
-        $csv = $logData | ConvertFrom-csv
-        Write-Verbose "Conversion to CSV was successful"
-    } Catch {
-        Write-Verbose "Failed to Convert Log  to CSV $($_.Exception.Message)"
-        $csv = $null
-    }
-
-    Try {
-        Write-Verbose "Converting Log Data to TSV"
-        $tsv = $logData | ConvertFrom-Csv -Delimiter "`t"
-        Write-Verbose "Conversion to TSV was successful"
-    } Catch {
-        Write-Verbose "Failed to Convert Log to TSV $($_.Exception.Message)"
-        $tsv = $null
-    }
-
-    if($csv -and $tsv) {
-        $csvItems = $csv[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count
-        $tsvItems = $tsv[0].PSObject.Members.Where{$_.MemberType -eq "NoteProperty"}.Count
-        if($csvItems -gt 1 -and $csvItems -ge $tsvItems) {
-            Write-Verbose "There are equal or more properties in the CSV than TSV, selecting CSV as Winner"
-            Return [LogType]::CSV
-        } elseif($tsvItems -gt 1) {
-            Write-Verbose "There are more properties in the TSV than CSV, selecting TSV as Winner"
-            Return [LogType]::TSV
-        } else {
-            Write-Verbose "There is no clear winner between CSV and TSV, cannot select Winner"
-        }
-    }
-
-    Write-Verbose "Could not find a match, Returning 'Nothing'"
-    Return [LogType]::Nothing
+	[CmdletBinding()]
+	Param
+	(
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   HelpMessage = 'String of raw data to be processed')]
+		[String]$LogData,
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $true,
+				   ValueFromPipeline = $false,
+				   HelpMessage = 'Path to Log File to Process')]
+		[System.IO.FileInfo]$LogFile,
+		[Parameter(HelpMessage = 'Do not display warnings in console')]
+		[switch]$SkipWarning
+	)
+	
+	Write-Verbose "Get-LogSlothType Function is beginning"
+	If (-Not ($skipWarning)) {
+		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Get-LogSlothType)"
+	}
+	
+	If ($logFile) {
+		Try {
+			Write-Verbose "LogFile Parameter Defined, Importing $logFile"
+			$logData = Get-Content $logFile -Raw -ErrorAction Stop
+		} Catch {
+			Throw "Error reading $logFile $($_.Exception.Message)"
+		}
+	}
+	
+	Write-Verbose "Initalizing RegEx Checks"
+	
+	$rxSCCM = [regex]::new('<!\[LOG')
+	$rxSCCMSimple = [regex]::new('(?msi).*? \$\$<.*?><.*?>')
+	$rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
+	
+	$firstLineOfData = $($logData -split "`n") | Where-Object {
+		$_ -notlike "ROLLOVER*"
+	} | Select-Object -First 1
+	
+	Write-Verbose "Using RegEx to Determine Log Type"
+	Switch ($logData) {
+		# SCCM
+		{
+			$rxSCCM.IsMatch($firstLineOfData)
+		} {
+			Write-Verbose "RegEx Confirmation that Log is SCCM.  Returning."
+			Return [LogType]::SCCM; Break
+		}
+		
+		# SCCM Simple
+		{
+			$rxSCCMSimple.IsMatch($firstLineOfData)
+		} {
+			Write-Verbose "RegEx Confirmation that Log is SCCM Simple.  Returning."
+			Return [LogType]::SCCMSimple; Break
+		}
+		
+		# W3C Extended
+		{
+			$rxW3CExtended.IsMatch($logData)
+		} {
+			Write-Verbose "RegEx Confirmation that Log is W3CExtended.  Returning."
+			Return [LogType]::W3CExtended; Break
+		}
+		
+	}
+	
+	# Not a pre-defined type, let's make some best guesses
+	Try {
+		Write-Verbose "Converting Log Data to CSV"
+		$csv = $logData | ConvertFrom-csv
+		Write-Verbose "Conversion to CSV was successful"
+	} Catch {
+		Write-Verbose "Failed to Convert Log  to CSV $($_.Exception.Message)"
+		$csv = $null
+	}
+	
+	Try {
+		Write-Verbose "Converting Log Data to TSV"
+		$tsv = $logData | ConvertFrom-Csv -Delimiter "`t"
+		Write-Verbose "Conversion to TSV was successful"
+	} Catch {
+		Write-Verbose "Failed to Convert Log to TSV $($_.Exception.Message)"
+		$tsv = $null
+	}
+	
+	If ($csv -and $tsv) {
+		$csvItems = $csv[0].PSObject.Members.Where{
+			$_.MemberType -eq "NoteProperty"
+		}.Count
+		$tsvItems = $tsv[0].PSObject.Members.Where{
+			$_.MemberType -eq "NoteProperty"
+		}.Count
+		If ($csvItems -gt 1 -and $csvItems -ge $tsvItems) {
+			Write-Verbose "There are equal or more properties in the CSV than TSV, selecting CSV as Winner"
+			Return [LogType]::CSV
+		} ElseIf ($tsvItems -gt 1) {
+			Write-Verbose "There are more properties in the TSV than CSV, selecting TSV as Winner"
+			Return [LogType]::TSV
+		} Else {
+			Write-Verbose "There is no clear winner between CSV and TSV, cannot select Winner"
+		}
+	}
+	
+	Write-Verbose "Could not find a match, Returning 'Nothing'"
+	Return [LogType]::Nothing
 }
 Function Import-LogSloth {
     [CmdletBinding()]
