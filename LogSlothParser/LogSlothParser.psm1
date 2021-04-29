@@ -808,9 +808,9 @@ Function Import-LogSCCMSimple {
 
     [CmdLetBinding()]
     Param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $LogData
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'String of log data to import')]
+        [string]$LogData
     )
 
     Write-Verbose "Private Import-LogSCCMSimple Function is beginning"
