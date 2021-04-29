@@ -1026,34 +1026,51 @@ Function ConvertTo-LogSlothHTML {
 }
 
 Function Export-LogSlothLog {
-    Param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1)]
-        [LogSloth]$LogObject,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$false, Position=2)]
-        [System.IO.FileInfo]$Path,
-        [Parameter(Mandatory=$false, ValueFromPipeline=$false, Position=3)]
-        [LogSlothExportType]$Format = [LogSlothExportType]::HTML,
-        [Parameter(Mandatory=$false, ValueFromPipeline=$false)]
-        [Switch]$IncludeRawLog,
-        [Switch]$SkipWarning,
-        [Switch]$Force
-    )
-
-    Write-Verbose "Export-LogSlothLog Function is beginning"
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)" }
-
-    Switch($Format) {
-        "HTML" {
-            Try {
-                $LogObject | ConvertTo-LogSlothHTML -IncludeRawLog:$includeRawLog -SkipWarning | Out-File $Path -Encoding utf8 -NoClobber:$(-Not $Force) -ErrorAction Stop
-            } Catch {
-                Throw "Unable to export file. $($_.Exception.Message)"
-            }
-        }
-    }
-
-    Write-Verbose "Export-LogSlothLog Function is returning"
-    Return
+	[CmdletBinding()]
+	Param
+	(
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   Position = 1,
+				   HelpMessage = 'Object returned by Import-LogData or Import-LogDataSanitized')]
+		[LogSloth]$LogObject,
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $false,
+				   Position = 2,
+				   HelpMessage = 'Path to file to export to')]
+		[System.IO.FileInfo]$Path,
+		[Parameter(Mandatory = $false,
+				   ValueFromPipeline = $false,
+				   Position = 3,
+				   HelpMessage = 'Format of the exported data')]
+		[LogSlothExportType]$Format = [LogSlothExportType]::HTML,
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $false,
+				   HelpMessage = 'Define if the raw (or sanitized) data from the original log should be included in the conversion.')]
+		[Switch]$IncludeRawLog,
+		[Parameter(HelpMessage = 'Do not display warnings in console')]
+		[Switch]$SkipWarning,
+		[Parameter(HelpMessage = 'Overwrite existing file if it exists')]
+		[Switch]$Force
+	)
+	
+	Write-Verbose "Export-LogSlothLog Function is beginning"
+	If (-Not ($skipWarning)) {
+		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
+	}
+	
+	Switch ($Format) {
+		"HTML" {
+			Try {
+				$LogObject | ConvertTo-LogSlothHTML -IncludeRawLog:$includeRawLog -SkipWarning | Out-File $Path -Encoding utf8 -NoClobber:$(-Not $Force) -ErrorAction Stop
+			} Catch {
+				Throw "Unable to export file. $($_.Exception.Message)"
+			}
+		}
+	}
+	
+	Write-Verbose "Export-LogSlothLog Function is returning"
+	Return
 }
 
 # New changes here should be added to the manifest as well.
