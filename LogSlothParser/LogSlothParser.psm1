@@ -1101,7 +1101,7 @@ Function Export-LogSlothLog {
 				   Position = 3,
 				   HelpMessage = 'Format of the exported data')]
 		[LogSlothExportType]$Format = [LogSlothExportType]::HTML,
-		[Parameter(Mandatory = $true,
+		[Parameter(Mandatory = $false,
 				   ValueFromPipeline = $false,
 				   HelpMessage = 'Define if the raw (or sanitized) data from the original log should be included in the conversion.')]
 		[Switch]$IncludeRawLog,
