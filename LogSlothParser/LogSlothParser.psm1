@@ -59,13 +59,17 @@ Class LogSlothFormatting {
 Function Get-SanitizedDataByMatch {
 	Param
 	(
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'Text to search for $RX')]
 		[string]$InputData,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'Regular Expression To Search $InputData for')]
 		[string]$RX,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'Stub to be returned as sanitized value')]
 		[string]$Stub,
-		[Parameter(Mandatory = $false)]
+		[Parameter(Mandatory = $false,
+				   HelpMessage = 'Define if value should be returned in quotes')]
 		[switch]$Quoted = $false
 	)
 	
