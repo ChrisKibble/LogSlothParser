@@ -852,9 +852,9 @@ Function Import-LogW3CExtended {
 
     [CmdLetBinding()]
     Param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $LogData
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'String of log data to import')]
+        [string]$LogData
     )
 
     Write-Verbose "Private Import-LogW3CExtended Function is beginning"
