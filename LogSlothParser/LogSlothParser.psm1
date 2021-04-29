@@ -214,6 +214,7 @@ Function Get-LogSlothType {
 	$rxSCCMSimple = [regex]::new('(?msi).*? \$\$<.*?><.*?>')
 	$rxW3CExtended = [regex]::new('(?msi)^#Software.*?^#Fields: ')
 	$rxCLFAccess = [regex]::New('^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)) .*? .*? \[.*?\] "(.*?)" \d{3} ')
+	$rxCLFError = [regex]::new('(?i)\[.*?] \[.*?] \[pid \d{1,}:tid \d{1,}] ')
 
 	$firstLineOfData = $($logData -split "`n") | Where-Object {
 		$_ -notlike "ROLLOVER*"
@@ -222,8 +223,13 @@ Function Get-LogSlothType {
 	Write-Verbose "Using RegEx to Determine Log Type"
 
 	If($rxCLFAccess.IsMatch($firstLineOfData)) {
-		Write-Verbose "RegEx Confirmation that Log is Common Log Format (CLR) Access.  Returning."
+		Write-Verbose "RegEx Confirmation that Log is Common Log Format (CLF) Access.  Returning."
 		Return [LogType]::CLFAccess
+	}
+
+	If($rxCLFError.IsMatch($firstLineOfData)) {
+		Write-Verbose "RegEx Confirmation that Log is Common Log Format (CLF) Error.  Returning."
+		Return [LogType]::CLFError
 	}
 
 	Switch ($logData) {
@@ -393,8 +399,55 @@ Function Import-LogSloth {
 			If(-Not($Headers)) {
 				$Headers = @("RemoteHost","Ident","User","DateTime","Request","Status","Size")
 			}
+			
+			# Change text in square brackets to be in quotes for better import.
+			$tmpLogData = $LogData -replace '\[(.*?)\]','"$1"'
+
+			## TODO: Make this its own function for better re-usability
+			## TODO: Document this "+" sign at end of last header.
+			
+			# If the final header ends in a plus, it should cover all remaining fields, so enclose the final group of characters in a set of quotes.
+			If($headers[-1].ToString() -like "*+") {
+				$staticHeaderCount = $Headers.Count - 1
+				$tmpLogData = [regex]::Replace($tmpLogData, "(?m)(^(?:`".*?`" |.*? ){$staticHeaderCount})(.*?)`r", '$1"$2"')
+
+				# Remove + sign
+				$headers = [System.Collections.ArrayList]$Headers
+				$headers[-1] = $headers[-1].ToString().Substring(0,$headers[-1].ToString().Length-1)
+			}
+
 			$ConvertParams = @{
-				InputObject = $LogData -replace '\[(.*?)\]','"$1"'
+				InputObject = $tmpLogData
+				Delimiter = " "
+				Header = $Headers
+			}
+			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+		}
+		"CLFError" {
+			Write-Verbose "Importing CLF Access Error File using Built-in PowerShell Function"
+
+			If(-Not($Headers)) {
+				$Headers = @("DateTime","LogLevel","Process","Source","ErrorCode","Message+")
+			}
+
+			# Change text in square brackets to be in quotes for better import.
+			$tmpLogData = $LogData -replace '\[(.*?)\]','"$1"'
+
+			## TODO: Make this its own function for better re-usability
+			## TODO: Document this "+" sign at end of last header.
+
+			# If the final header ends in a plus, it should cover all remaining fields, so enclose the final group of characters in a set of quotes.
+			If($headers[-1].ToString() -like "*+") {
+				$staticHeaderCount = $Headers.Count - 1
+				$tmpLogData = [regex]::Replace($tmpLogData, "(?m)(^(?:`".*?`" |.*? ){$staticHeaderCount})(.*?)`r", '$1"$2"')
+
+				# Remove + sign
+				$headers = [System.Collections.ArrayList]$Headers
+				$headers[-1] = $headers[-1].ToString().Substring(0,$headers[-1].ToString().Length-1)		
+			}
+
+			$ConvertParams = @{
+				InputObject = $tmpLogData
 				Delimiter = " "
 				Header = $Headers
 			}
