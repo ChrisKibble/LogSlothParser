@@ -57,6 +57,8 @@ Class LogSlothFormatting {
 }
 
 Function Get-SanitizedDataByMatch {
+	
+	[CmdLetBinding()]
 	Param
 	(
 		[Parameter(Mandatory = $true,
