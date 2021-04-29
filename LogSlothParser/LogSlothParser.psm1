@@ -1,5 +1,8 @@
 Enum LogType {
-    CSV
+    CLF
+	CLFAccess
+	CLFError
+	CSV
     TSV
     SCCM
     SCCMSimple
