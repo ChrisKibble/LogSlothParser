@@ -870,8 +870,12 @@ Function Import-LogW3CExtended {
 }
 
 Function Convert-Color2Hex {
-    Param(
-        [System.Drawing.Color]$Color
+	
+	[CmdletBinding()]
+	Param(
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'Color Name')]
+		[System.Drawing.Color]$Color
     )
 
     $rHex = [Convert]::ToString($color.r, 16).padLeft(2, "0")
