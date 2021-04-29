@@ -120,54 +120,57 @@ Function Get-SanitizedDataByMatch {
 }
 
 Function Test-FormatRule {
-    [CmdLetBinding()]
-    [OutputType([Boolean])]
-    Param(
-        $Rule
-    )
-
-    Write-Verbose "Testing Formatting Rule"
-
-    If(-Not($rule.Lookup)) {
-        Write-Verbose "Missing Lookup Value, returning False"
-        Return $false
-    }
-
-    If(-not($Rule.TextColor) -and -not($Rule.BackgroundColor)) {
-        Write-Verbose "One of TextColor or BackgroundColor is required, returning false"
-        Return $false
-    }
-
-    Try {
-        [void][regex]$Rule.Lookup
-        Write-Verbose "RegEx Test Passed"
-    } Catch {
-        Write-Verbose "Lookup is not valid regex, returning false"
-        Return $false
-    }
-
-    If($rule.TextColor) {
-        Try {
-            [void][System.Drawing.Color]$Rule.TextColor
-            Write-Verbose "TextColor Looks OK"
-        } Catch {
-            Write-Verbose "TextColor is not valid System.Drawing.Color, returning false"
-            Return $false
-        }
-    }
-
-    If($rule.BackgroundColor) {
-        Try {
-            [void][System.Drawing.Color]$Rule.BackgroundColor
-            Write-Verbose "BackgroundColor Looks OK"
-        } Catch {
-            Write-Verbose "BackgroundColor is not valid System.Drawing.Color, returning false"
-            Return $false
-        }
-    }
-
-    Write-Verbose "All checks passed, returning True"
-    Return $true
+	[CmdletBinding()]
+	[OutputType([Boolean])]
+	Param
+	(
+		[Parameter(Mandatory = $true,
+				   HelpMessage = 'LogSlothRule Hash Table')]
+		$Rule
+	)
+	
+	Write-Verbose "Testing Formatting Rule"
+	
+	If (-Not ($rule.Lookup)) {
+		Write-Verbose "Missing Lookup Value, returning False"
+		Return $false
+	}
+	
+	If (-not ($Rule.TextColor) -and -not ($Rule.BackgroundColor)) {
+		Write-Verbose "One of TextColor or BackgroundColor is required, returning false"
+		Return $false
+	}
+	
+	Try {
+		[void][regex]$Rule.Lookup
+		Write-Verbose "RegEx Test Passed"
+	} Catch {
+		Write-Verbose "Lookup is not valid regex, returning false"
+		Return $false
+	}
+	
+	If ($rule.TextColor) {
+		Try {
+			[void][System.Drawing.Color]$Rule.TextColor
+			Write-Verbose "TextColor Looks OK"
+		} Catch {
+			Write-Verbose "TextColor is not valid System.Drawing.Color, returning false"
+			Return $false
+		}
+	}
+	
+	If ($rule.BackgroundColor) {
+		Try {
+			[void][System.Drawing.Color]$Rule.BackgroundColor
+			Write-Verbose "BackgroundColor Looks OK"
+		} Catch {
+			Write-Verbose "BackgroundColor is not valid System.Drawing.Color, returning false"
+			Return $false
+		}
+	}
+	
+	Write-Verbose "All checks passed, returning True"
+	Return $true
 }
 
 Function Get-LogSlothType {
