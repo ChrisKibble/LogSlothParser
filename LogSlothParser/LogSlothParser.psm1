@@ -441,202 +441,308 @@ Function Import-LogSloth {
 }
 
 Function Import-LogSlothSanitized {
-    Param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogClass")]
-        [LogSloth]$LogObject,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName = "LogData")]
-        [String]$LogData,
-        [Parameter(Mandatory=$true, ValueFromPipeline=$false, ParameterSetName = "LogFile")]
-        [System.IO.FileInfo]$LogFile,
-        [Parameter(Mandatory=$false, ParameterSetName = "LogClass")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
-        [SanitizeType]$Sanitize = [SanitizeType]::All,
-        [Parameter(Mandatory=$false, ParameterSetName = "LogClass")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
-        [ValidateScript({
-            if($_ -match "(?i)^[a-z]+$") { $true } else { throw "You must use only letters A-Z." }
-        })]
-        [string]$Prefix = "sanitized",
-        [Array]$Headers = @(),
-        [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
-        [System.Collections.ArrayList]$LogFormatting,
-        [Parameter(Mandatory=$false, ParameterSetName = "LogData")]
-        [Parameter(Mandatory=$false, ParameterSetName = "LogFile")]
-        [Switch]$SkipFormatting,
-        [switch]$SkipWarning
-    )
-
-    Write-Verbose "Import-LogSlothSanitized Function is beginning"
-
-    If(-Not($skipWarning)) { Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)" }
-
-    If($logFile) {
-        Try {
-            Write-Verbose "LogFile Parameter Defined, Importing $logFile"
-            $logData = Get-Content $logFile -Raw -ErrorAction Stop
-        } Catch {
-            Throw "Error reading $logFile $($_.Exception.Message)"
-        }
-    } elseif ($LogObject) {
-        Write-Verbose "LogClass Passed, Capturing Raw Data"
-        $logData = $LogObject.LogDataRaw
-    }
-
-    Write-Verbose "Getting Log Type"
-    $logType = Get-LogSlothType -LogData $LogData -SkipWarning
-
-    If($LogType -eq [LogType]::Nothing) {
-        Throw "Missing LogType"
-    }
-
-    $LogDataUnsanitized = $LogData
-
-    $replacementList = [System.Collections.ArrayList]::New()
-
-    # Build Replacements Table
-
-    Write-Verbose "Building Replacements Table for Input Data to Sanitize"
-    # -- Configuration Manager Specific --
-    If($logType -eq [LogType]::SCCM -or $logType -eq [LogType]::SCCMSimple) {
-        Write-Verbose "... Processing Configuration Manager (CM) Sanitization"
-        Switch($sanitize) {
-            { $_ -band [SanitizeType]::cmDistributionPoint } {
-                # Download URLs
-                Write-Verbose "...... Processing CM Distribution Points (Download URLs)"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Matching DP location found [0-9]{1,} - (http(?:|s):\/\/.*?) "; Stub="$($prefix)dpurl"; Quoted=$false}) | Out-Null
-
-                # CMG URL
-                Write-Verbose "...... Processing CM Distribution Points (CMG URLs)"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)https:\/\/([^. ]+).cloudapp\.net"; Stub="$($prefix)cmghost"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmAdvertisementId } {
-                #Advertisement ID by "ADV:#"
-                Write-Verbose "...... Processing CM Advertisement IDs"
-                $replacementList.Add([PSCustomObject]@{RegEx="Ad(?:vert|):(?: |)([A-Z]{1,3}[0-9A-F]{5,}\b)"; Stub="$($prefix)adv"; Quoted=$false}) | Out-Null
-            }
-            { $_-band [SanitizeType]::cmPackageId} {
-                #Package IDs by "Package:#"
-                Write-Verbose "...... Processing CM Package IDs"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Package:(?: |)([A-Z]{1,3}[0-9A-F]{5,}\b)"; Stub="$($prefix)pkgid"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Download started for content ([A-Z]{1,3}[0-9]{5,})"; Stub="$($prefix)pkgiddl"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmProgramId } {
-                # Program Names by "Program:'xxx'>"
-                Write-Verbose "...... Processing CM Program IDs"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Program:(?: |)(.*?)(?:[\b|\]|,]| \w+ with exit code)"; Stub="$($prefix)prgm"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmMachineName } {
-                # Computer Names by "Machine Name = 'xxx'"
-                Write-Verbose "...... Processing CM Machine Name"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)MachineName = `"(.*?)`""; Stub="$($prefix)hostname"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmSiteCode} {
-                # Site Code in Quotes
-                Write-Verbose "...... Processing CM Site Codes"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)SiteCode(?: |)=(?: |)`"([A-Z0-9]{1,3})`""; Stub="$($prefix)sitecodeA"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Site Code -> ([A-Z0-9]{1,3})"; Stub="$($prefix)sitecodeB"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )SITE=(.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvC"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmADSite} {
-                # AD Site Name
-                Write-Verbose "...... Processing CM AD Sites"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)<ADSite(?:.*?)Name=`"(.*?)`"\/>"; Stub="$($prefix)adsite"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmServerName} {
-                # CM SQL Server Name
-                Write-Verbose "...... Processing CM Server Names"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)sqlServerName(?: |)=(?: |)(.*?)(?:,| |\])"; Stub="$($prefix)cmsrvA"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Server Name: (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvB"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)Setting Site Server -> (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvC"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )SYS=(.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvD"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )Server: (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvE"; Quoted=$false}) | Out-Null
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(?:^| )MP: (.*?)(?:,|\]| )"; Stub="$($prefix)cmsrvF"; Quoted=$false}) | Out-Null
-            }
-            { $_ -band [SanitizeType]::cmDatabaseName} {
-                # CM Database Name
-                Write-Verbose "...... Processing CM Database Names"
-                $replacementList.Add([PSCustomObject]@{RegEx="(?msi)databaseName(?: |)=(?: |)(.*?)(?:,| |\]|\.)"; Stub="$($prefix)cmdb"; Quoted=$false}) | Out-Null
-            }
-        } # // End of Switch
-    } # // End of Log Type SCCM
-
-    # -- Generic Replacements --
-    Write-Verbose "... Processing Generic Sanitization"
-    Switch($Sanitize) {
-        { $_ -band [SanitizeType]::urlHost } {
-            # URL Host
-            Write-Verbose "...... Processing URL Hosts"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)http(?:|s):\/\/(.*?)\/"; Stub="$($prefix)urlhost"; Quoted=$false}) | Out-Null
-        }
-        { $_ -band [SanitizeType]::guid } {
-            # GUIDs in 8-4-4-4-12 Format
-            Write-Verbose "...... Processing GUIDs"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)([0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})"; Stub="$($prefix)guid"; Quoted=$false}) | Out-Null
-        }
-        { $_ -band [SanitizeType]::hash64 } {
-            # Hashes (64 Character Long Hex)
-            Write-Verbose "...... Processing 64 Character Hashes"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)([A-Z0-9]{64})"; Stub="$($prefix)hash"; Quoted=$false}) | Out-Null
-        }
-        { $_ -band [SanitizeType]::ipv4 } {
-            # IP Addresses
-            Write-Verbose "...... Processing IPv4 Addresses"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))"; Stub="$($prefix)ip"; Quoted=$false}) | Out-Null
-        }
-        { $_ -band [SanitizeType]::sid } {
-            # SID Format
-            Write-Verbose "...... Processing SIDs"
-            $replacementList.Add([PSCustomObject]@{RegEx="(?msi)(S-1-[0-9]{1,2}-\d{1,2}-(\d{8,10}-){3}\d{8,10})"; Stub="$($prefix)sid"; Quoted=$false}) | Out-Null
-        }
-    } # // End of Switch (Generic)
-
-    Write-Verbose "Building List of Data to Sanitize"
-
-    $replacementArray = [System.Collections.ArrayList]::New()
-
-    ForEach($rule in $replacementList) {
-        $uniqueStringMatches = [System.Collections.Generic.HashSet[string]]::New([StringComparer]::InvariantCultureIgnoreCase)
-        $rxMatches = [regex]::Matches($LogData, $rule.regex)
-        ForEach($m in $rxMatches) {
-            $uniqueStringMatches.Add($m.groups[1].value) | Out-Null
-        }
-
-        $index = 0
-        ForEach($find in $uniqueStringMatches) {
-            $index++
-            $replace = "$($rule.Stub)$index"
-            if($rule.Quoted) {
-                $replace = "`"$replace`""
-            }
-            $replacementArray.Add(
-                [PSCustomObject]@{
-                    Text = $find
-                    Replace = $replace
-                }
-            ) | Out-Null
-        }
-    }
-
-    Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
-
-    ForEach($replacement in $replacementArray) {
-        $logData = $LogData -replace [RegEx]::Escape($replacement.text), $replacement.Replace
-    }
-
-    Write-Verbose "Calling Import-LogSloth to Format Data Properly"
-    $log = Import-LogSloth -LogData $LogData -SkipWarning -LogFormatting $LogFormatting -SkipFormatting:$SkipFormatting -Headers $headers
-
-    Write-Verbose "Writing Sanitization Metadata to Log Class"
-    $log.SanitizeType = $Sanitize
-    $log.SanitizedReplacements = $replacementArray
-    $log.LogDataUnsanitized = $LogDataUnsanitized
-
-    Write-Verbose "Function is complete and returning"
-
-    Return $log
+	Param
+	(
+		[Parameter(ParameterSetName = 'LogClass',
+				   Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   HelpMessage = 'Object returned by Import-LogData')]
+		[LogSloth]$LogObject,
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   HelpMessage = 'String of raw data to be processed')]
+		[String]$LogData,
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $true,
+				   ValueFromPipeline = $false,
+				   HelpMessage = 'Path to Log File to Process')]
+		[System.IO.FileInfo]$LogFile,
+		[Parameter(ParameterSetName = 'LogClass',
+				   Mandatory = $false,
+				   HelpMessage = 'List of sanitizations to apply to log data')]
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $false)]
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $false)]
+		[SanitizeType]$Sanitize = [SanitizeType]::All,
+		[Parameter(ParameterSetName = 'LogClass',
+				   Mandatory = $false,
+				   HelpMessage = 'Sanitization prefix (default: 'sanitized')')]
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $false)]
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $false)]
+		[ValidateScript({
+				If ($_ -match "(?i)^[a-z]+$") {
+					$true
+				} Else {
+					Throw "You must use only letters A-Z."
+				}
+			})]
+		[string]$Prefix = "sanitized",
+		[Parameter(HelpMessage = 'Optional headers when importing delimited logs')]
+		[Array]$Headers = @(),
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $false,
+				   HelpMessage = 'Optional LogFormatting Array (See extended help in Docs)')]
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $false)]
+		[System.Collections.ArrayList]$LogFormatting,
+		[Parameter(ParameterSetName = 'LogData',
+				   Mandatory = $false,
+				   HelpMessage = 'Do not format the output data when exporting')]
+		[Parameter(ParameterSetName = 'LogFile',
+				   Mandatory = $false)]
+		[Switch]$SkipFormatting,
+		[Parameter(HelpMessage = 'Do not display warnings in console')]
+		[switch]$SkipWarning
+	)
+	
+	Write-Verbose "Import-LogSlothSanitized Function is beginning"
+	
+	If (-Not ($skipWarning)) {
+		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)"
+	}
+	
+	If ($logFile) {
+		Try {
+			Write-Verbose "LogFile Parameter Defined, Importing $logFile"
+			$logData = Get-Content $logFile -Raw -ErrorAction Stop
+		} Catch {
+			Throw "Error reading $logFile $($_.Exception.Message)"
+		}
+	} ElseIf ($LogObject) {
+		Write-Verbose "LogClass Passed, Capturing Raw Data"
+		$logData = $LogObject.LogDataRaw
+	}
+	
+	Write-Verbose "Getting Log Type"
+	$logType = Get-LogSlothType -LogData $LogData -SkipWarning
+	
+	If ($LogType -eq [LogType]::Nothing) {
+		Throw "Missing LogType"
+	}
+	
+	$LogDataUnsanitized = $LogData
+	
+	$replacementList = [System.Collections.ArrayList]::New()
+	
+	# Build Replacements Table
+	
+	Write-Verbose "Building Replacements Table for Input Data to Sanitize"
+	# -- Configuration Manager Specific --
+	If ($logType -eq [LogType]::SCCM -or $logType -eq [LogType]::SCCMSimple) {
+		Write-Verbose "... Processing Configuration Manager (CM) Sanitization"
+		Switch ($sanitize) {
+			{
+				$_ -band [SanitizeType]::cmDistributionPoint
+			} {
+				# Download URLs
+				Write-Verbose "...... Processing CM Distribution Points (Download URLs)"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Matching DP location found [0-9]{1,} - (http(?:|s):\/\/.*?) "; Stub = "$($prefix)dpurl"; Quoted = $false
+					}) | Out-Null
+				
+				# CMG URL
+				Write-Verbose "...... Processing CM Distribution Points (CMG URLs)"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)https:\/\/([^. ]+).cloudapp\.net"; Stub = "$($prefix)cmghost"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmAdvertisementId
+			} {
+				#Advertisement ID by "ADV:#"
+				Write-Verbose "...... Processing CM Advertisement IDs"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "Ad(?:vert|):(?: |)([A-Z]{1,3}[0-9A-F]{5,}\b)"; Stub = "$($prefix)adv"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmPackageId
+			} {
+				#Package IDs by "Package:#"
+				Write-Verbose "...... Processing CM Package IDs"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Package:(?: |)([A-Z]{1,3}[0-9A-F]{5,}\b)"; Stub = "$($prefix)pkgid"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Download started for content ([A-Z]{1,3}[0-9]{5,})"; Stub = "$($prefix)pkgiddl"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmProgramId
+			} {
+				# Program Names by "Program:'xxx'>"
+				Write-Verbose "...... Processing CM Program IDs"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Program:(?: |)(.*?)(?:[\b|\]|,]| \w+ with exit code)"; Stub = "$($prefix)prgm"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmMachineName
+			} {
+				# Computer Names by "Machine Name = 'xxx'"
+				Write-Verbose "...... Processing CM Machine Name"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)MachineName = `"(.*?)`""; Stub = "$($prefix)hostname"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmSiteCode
+			} {
+				# Site Code in Quotes
+				Write-Verbose "...... Processing CM Site Codes"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)SiteCode(?: |)=(?: |)`"([A-Z0-9]{1,3})`""; Stub = "$($prefix)sitecodeA"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Site Code -> ([A-Z0-9]{1,3})"; Stub = "$($prefix)sitecodeB"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)(?:^| )SITE=(.*?)(?:,|\]| )"; Stub = "$($prefix)cmsrvC"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmADSite
+			} {
+				# AD Site Name
+				Write-Verbose "...... Processing CM AD Sites"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)<ADSite(?:.*?)Name=`"(.*?)`"\/>"; Stub = "$($prefix)adsite"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmServerName
+			} {
+				# CM SQL Server Name
+				Write-Verbose "...... Processing CM Server Names"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)sqlServerName(?: |)=(?: |)(.*?)(?:,| |\])"; Stub = "$($prefix)cmsrvA"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Server Name: (.*?)(?:,|\]| )"; Stub = "$($prefix)cmsrvB"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)Setting Site Server -> (.*?)(?:,|\]| )"; Stub = "$($prefix)cmsrvC"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)(?:^| )SYS=(.*?)(?:,|\]| )"; Stub = "$($prefix)cmsrvD"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)(?:^| )Server: (.*?)(?:,|\]| )"; Stub = "$($prefix)cmsrvE"; Quoted = $false
+					}) | Out-Null
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)(?:^| )MP: (.*?)(?:,|\]| )"; Stub = "$($prefix)cmsrvF"; Quoted = $false
+					}) | Out-Null
+			}
+			{
+				$_ -band [SanitizeType]::cmDatabaseName
+			} {
+				# CM Database Name
+				Write-Verbose "...... Processing CM Database Names"
+				$replacementList.Add([PSCustomObject]@{
+						RegEx = "(?msi)databaseName(?: |)=(?: |)(.*?)(?:,| |\]|\.)"; Stub = "$($prefix)cmdb"; Quoted = $false
+					}) | Out-Null
+			}
+		} # // End of Switch
+	} # // End of Log Type SCCM
+	
+	# -- Generic Replacements --
+	Write-Verbose "... Processing Generic Sanitization"
+	Switch ($Sanitize) {
+		{
+			$_ -band [SanitizeType]::urlHost
+		} {
+			# URL Host
+			Write-Verbose "...... Processing URL Hosts"
+			$replacementList.Add([PSCustomObject]@{
+					RegEx = "(?msi)http(?:|s):\/\/(.*?)\/"; Stub = "$($prefix)urlhost"; Quoted = $false
+				}) | Out-Null
+		}
+		{
+			$_ -band [SanitizeType]::guid
+		} {
+			# GUIDs in 8-4-4-4-12 Format
+			Write-Verbose "...... Processing GUIDs"
+			$replacementList.Add([PSCustomObject]@{
+					RegEx = "(?msi)([0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})"; Stub = "$($prefix)guid"; Quoted = $false
+				}) | Out-Null
+		}
+		{
+			$_ -band [SanitizeType]::hash64
+		} {
+			# Hashes (64 Character Long Hex)
+			Write-Verbose "...... Processing 64 Character Hashes"
+			$replacementList.Add([PSCustomObject]@{
+					RegEx = "(?msi)([A-Z0-9]{64})"; Stub = "$($prefix)hash"; Quoted = $false
+				}) | Out-Null
+		}
+		{
+			$_ -band [SanitizeType]::ipv4
+		} {
+			# IP Addresses
+			Write-Verbose "...... Processing IPv4 Addresses"
+			$replacementList.Add([PSCustomObject]@{
+					RegEx = "(?msi)((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))"; Stub = "$($prefix)ip"; Quoted = $false
+				}) | Out-Null
+		}
+		{
+			$_ -band [SanitizeType]::sid
+		} {
+			# SID Format
+			Write-Verbose "...... Processing SIDs"
+			$replacementList.Add([PSCustomObject]@{
+					RegEx = "(?msi)(S-1-[0-9]{1,2}-\d{1,2}-(\d{8,10}-){3}\d{8,10})"; Stub = "$($prefix)sid"; Quoted = $false
+				}) | Out-Null
+		}
+	} # // End of Switch (Generic)
+	
+	Write-Verbose "Building List of Data to Sanitize"
+	
+	$replacementArray = [System.Collections.ArrayList]::New()
+	
+	ForEach ($rule In $replacementList) {
+		$uniqueStringMatches = [System.Collections.Generic.HashSet[string]]::New([StringComparer]::InvariantCultureIgnoreCase)
+		$rxMatches = [regex]::Matches($LogData, $rule.regex)
+		ForEach ($m In $rxMatches) {
+			$uniqueStringMatches.Add($m.groups[1].value) | Out-Null
+		}
+		
+		$index = 0
+		ForEach ($find In $uniqueStringMatches) {
+			$index++
+			$replace = "$($rule.Stub)$index"
+			If ($rule.Quoted) {
+				$replace = "`"$replace`""
+			}
+			$replacementArray.Add(
+				[PSCustomObject]@{
+					Text    = $find
+					Replace = $replace
+				}
+			) | Out-Null
+		}
+	}
+	
+	Write-Verbose "Starting Sanitization of Data based on Replacement ArrayList"
+	
+	ForEach ($replacement In $replacementArray) {
+		$logData = $LogData -replace [RegEx]::Escape($replacement.text), $replacement.Replace
+	}
+	
+	Write-Verbose "Calling Import-LogSloth to Format Data Properly"
+	$log = Import-LogSloth -LogData $LogData -SkipWarning -LogFormatting $LogFormatting -SkipFormatting:$SkipFormatting -Headers $headers
+	
+	Write-Verbose "Writing Sanitization Metadata to Log Class"
+	$log.SanitizeType = $Sanitize
+	$log.SanitizedReplacements = $replacementArray
+	$log.LogDataUnsanitized = $LogDataUnsanitized
+	
+	Write-Verbose "Function is complete and returning"
+	
+	Return $log
 }
 
 Function Import-LogSCCM {
