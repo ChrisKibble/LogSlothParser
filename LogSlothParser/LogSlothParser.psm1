@@ -394,6 +394,7 @@ Function Import-LogSloth {
 			}
 			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
 		}
+		## TODO: Add CLF Format Type (must be defined as function call since we can't auto-detect these unless they fall into Access or Error Logs)
 		"CLFAccess" {
 			Write-Verbose "Importing CLF Access Log File using Built-in PowerShell Function"
 			If(-Not($Headers)) {
