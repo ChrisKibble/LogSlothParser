@@ -395,40 +395,7 @@ Function Import-LogSloth {
 			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
 		}
 		"CLF" {
-			Write-Verbose "Importing CLF Log File using Built-in PowerShell Function"
-
-			# Change text in square brackets to be in quotes for better import.
-			$tmpLogData = $LogData -replace '\[(.*?)\]','"$1"'
-
-			If($headers) {
-				# If the final header ends in a plus, it should cover all remaining fields, so enclose the final group of characters in a set of quotes.
-				## TODO: Make this its own function for better re-usability
-				## TODO: Document this "+" sign at end of last header.
-				If($headers[-1].ToString() -like "*+") {
-					$staticHeaderCount = $Headers.Count - 1
-					$tmpLogData = [regex]::Replace($tmpLogData, "(?m)(^(?:`".*?`" |.*? ){$staticHeaderCount})(.*?)`r", '$1"$2"')
-
-					# Remove + sign
-					$headers = [System.Collections.ArrayList]$Headers
-					$headers[-1] = $headers[-1].ToString().Substring(0,$headers[-1].ToString().Length-1)
-				}
-			}
-
-			Write-Verbose $tmpLogData
-
-			$ConvertParams = @{
-				InputObject = $tmpLogData
-				Delimiter = " "
-			}
-
-			If ($headers) {
-				$ConvertParams.Add("Header", $headers)
-			} else {
-				Write-Warning "CLF Logs typically don't have defined headers, it's recommended one be supplied."
-			}
-
-			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
-
+			[System.Collections.ArrayList]$oLog = Import-LogCLF -LogData $LogData -Headers $headers
 		}
 		"CLFAccess" {
 			Write-Verbose "Importing CLF Access Log File using Built-in PowerShell Function"
@@ -974,19 +941,48 @@ Function Import-LogSCCMSimple {
     Return $logArray
 
 }
-Function Import-LogSCCM {
+Function Import-LogCLF {
 	[CmdletBinding()]
 	Param
 	(
 		[Parameter(Mandatory = $true,
 				   HelpMessage = 'String of log data to import')]
-		[string]$LogData
+		[string]$LogData,
+		[array]$headers
 	)
 	
-	$logArray = [System.Collections.ArrayList]::New()
+    Write-Verbose "Private Import-LogCLF Function is beginning"
+	Write-Verbose "Importing CLF Log File using Built-in PowerShell Function"
+
+	# Change text in square brackets to be in quotes for better import.
+	$tmpLogData = $LogData -replace '\[(.*?)\]','"$1"'
+
+	If($headers) {
+		# If the final header ends in a plus, it should cover all remaining fields, so enclose the final group of characters in a set of quotes.
+		## TODO: Make this its own function for better re-usability
+		## TODO: Document this "+" sign at end of last header.
+		If($headers[-1].ToString() -like "*+") {
+			$staticHeaderCount = $Headers.Count - 1
+			$tmpLogData = [regex]::Replace($tmpLogData, "(?m)(^(?:`".*?`" |.*? ){$staticHeaderCount})(.*?)`r", '$1"$2"')
+
+			# Remove + sign
+			$headers = [System.Collections.ArrayList]$Headers
+			$headers[-1] = $headers[-1].ToString().Substring(0,$headers[-1].ToString().Length-1)
+		}
+	}
+
+	$ConvertParams = @{
+		InputObject = $tmpLogData
+		Delimiter = " "
+	}
+
+	If ($headers) {
+		$ConvertParams.Add("Header", $headers)
+	}
+
+	[System.Collections.ArrayList]$logArray = ConvertFrom-Csv @ConvertParams
 
 	Return $logArray
-
 }
 
 Function Import-LogW3CExtended {
