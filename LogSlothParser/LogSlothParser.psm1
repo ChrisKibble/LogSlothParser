@@ -395,66 +395,24 @@ Function Import-LogSloth {
 			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
 		}
 		"CLF" {
+			Write-Verbose "Importing CLF Log using Import-LogCLF Private Function"
 			[System.Collections.ArrayList]$oLog = Import-LogCLF -LogData $LogData -Headers $headers
 		}
 		"CLFAccess" {
-			Write-Verbose "Importing CLF Access Log File using Built-in PowerShell Function"
 			If(-Not($Headers)) {
 				$Headers = @("RemoteHost","Ident","User","DateTime","Request","Status","Size")
 			}
-			
-			# Change text in square brackets to be in quotes for better import.
-			$tmpLogData = $LogData -replace '\[(.*?)\]','"$1"'
 
-			## TODO: Make this its own function for better re-usability
-			## TODO: Document this "+" sign at end of last header.
-			
-			# If the final header ends in a plus, it should cover all remaining fields, so enclose the final group of characters in a set of quotes.
-			If($headers[-1].ToString() -like "*+") {
-				$staticHeaderCount = $Headers.Count - 1
-				$tmpLogData = [regex]::Replace($tmpLogData, "(?m)(^(?:`".*?`" |.*? ){$staticHeaderCount})(.*?)`r", '$1"$2"')
-
-				# Remove + sign
-				$headers = [System.Collections.ArrayList]$Headers
-				$headers[-1] = $headers[-1].ToString().Substring(0,$headers[-1].ToString().Length-1)
-			}
-
-			$ConvertParams = @{
-				InputObject = $tmpLogData
-				Delimiter = " "
-				Header = $Headers
-			}
-			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+			Write-Verbose "Importing CLF Access Log using Import-LogCLF Private Function"
+			[System.Collections.ArrayList]$oLog = Import-LogCLF -LogData $LogData -Headers $headers
 		}
 		"CLFError" {
-			Write-Verbose "Importing CLF Access Error File using Built-in PowerShell Function"
-
 			If(-Not($Headers)) {
 				$Headers = @("DateTime","LogLevel","Process","Source","ErrorCode","Message+")
 			}
 
-			# Change text in square brackets to be in quotes for better import.
-			$tmpLogData = $LogData -replace '\[(.*?)\]','"$1"'
-
-			## TODO: Make this its own function for better re-usability
-			## TODO: Document this "+" sign at end of last header.
-
-			# If the final header ends in a plus, it should cover all remaining fields, so enclose the final group of characters in a set of quotes.
-			If($headers[-1].ToString() -like "*+") {
-				$staticHeaderCount = $Headers.Count - 1
-				$tmpLogData = [regex]::Replace($tmpLogData, "(?m)(^(?:`".*?`" |.*? ){$staticHeaderCount})(.*?)`r", '$1"$2"')
-
-				# Remove + sign
-				$headers = [System.Collections.ArrayList]$Headers
-				$headers[-1] = $headers[-1].ToString().Substring(0,$headers[-1].ToString().Length-1)		
-			}
-
-			$ConvertParams = @{
-				InputObject = $tmpLogData
-				Delimiter = " "
-				Header = $Headers
-			}
-			[System.Collections.ArrayList]$oLog = ConvertFrom-Csv @ConvertParams
+			Write-Verbose "Importing CLF Error Log using Import-LogCLF Private Function"
+			[System.Collections.ArrayList]$oLog = Import-LogCLF -LogData $LogData -Headers $headers
 		}
 		default {
 			Throw "No action defined for this log type."
