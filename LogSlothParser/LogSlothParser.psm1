@@ -547,6 +547,7 @@ Function Import-LogSlothSanitized {
 	
 	Write-Verbose "Import-LogSlothSanitized Function is beginning"
 	
+
 	If (-Not ($skipWarning)) {
 		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)"
 	}
@@ -565,11 +566,10 @@ Function Import-LogSlothSanitized {
 	
 	If($LogType -eq [LogType]::Nothing) {
 		Write-Verbose "Getting Log Type using Get-LogSlothType Function"
-		$log.logType = Get-LogSlothType -LogData $logData -skipWarning
-		Write-Verbose "Detected log type is $($log.logType)"
+		$LogType = Get-LogSlothType -LogData $logData -skipWarning
+		Write-Verbose "Detected log type is $($LogType)"
 	} else {
 		Write-Verbose "Using user defined LogType $LogType"		
-		$log.LogType = $LogType
 	}
 	
 	If ($LogType -eq [LogType]::Nothing) {
