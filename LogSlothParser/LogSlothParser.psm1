@@ -197,7 +197,7 @@ Function Get-LogSlothType {
 	
 	Write-Verbose "Get-LogSlothType Function is beginning"
 	If (-Not ($skipWarning)) {
-		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Get-LogSlothType)"
+		Write-Warning "LogSlothParser 0.3 is Currently in Beta and may not function at 100% (Get-LogSlothType)"
 	}
 	
 	If ($logFile) {
@@ -328,7 +328,7 @@ Function Import-LogSloth {
 	
 	Write-Verbose "Import-LogSloth Function is beginning"
 	If (-Not ($skipWarning)) {
-		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSloth)"
+		Write-Warning "LogSlothParser 0.3 is Currently in Beta and may not function at 100% (Import-LogSloth)"
 	}
 	
 	If ($logFile) {
@@ -549,7 +549,7 @@ Function Import-LogSlothSanitized {
 	
 
 	If (-Not ($skipWarning)) {
-		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)"
+		Write-Warning "LogSlothParser 0.3 is Currently in Beta and may not function at 100% (Import-LogSlothSanitized)"
 	}
 	
 	If ($logFile) {
@@ -997,7 +997,7 @@ Function ConvertTo-LogSlothHTML {
 	
 	Write-Verbose "ConvertTo-LogSlothHTML Function is beginning"
 	If (-Not ($skipWarning)) {
-		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
+		Write-Warning "LogSlothParser 0.3 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
 	}
 	
 	Write-Verbose "Excluding Meta Properties from Export"
@@ -1043,7 +1043,7 @@ Function ConvertTo-LogSlothHTML {
 	}
 	
 	[System.Collections.ArrayList]$links = @()
-	[void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">')
+	[void]$links.Add('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.34/css/jquery.dataTables.css">')
 	
 	[System.Collections.Specialized.OrderedDictionary]$dataTableOptions = @{
 	}
@@ -1056,7 +1056,7 @@ Function ConvertTo-LogSlothHTML {
 	
 	[System.Collections.ArrayList]$scripts = @()
 	[void]$scripts.Add('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>')
-	[void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>')
+	[void]$scripts.Add('<script src="https://cdn.datatables.net/1.10.34/js/jquery.dataTables.js"></script>')
 	[void]$scripts.Add("<script> `$(document).ready( function () { `$('#LogTable').DataTable( $($dataTableOptions | ConvertTo-Json) ); } );</script>")
 	
 	[System.Collections.ArrayList]$thead = @()
@@ -1135,7 +1135,7 @@ Function ConvertTo-LogSlothMarkdown {
 	
 	Write-Verbose "ConvertTo-LogSlothMarkdown Function is beginning"
 	If (-Not ($skipWarning)) {
-		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
+		Write-Warning "LogSlothParser 0.3 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
 	}
 	
 	Write-Verbose "Excluding Meta Properties from Export"
@@ -1192,7 +1192,7 @@ Function Export-LogSlothLog {
 	
 	Write-Verbose "Export-LogSlothLog Function is beginning"
 	If (-Not ($skipWarning)) {
-		Write-Warning "LogSlothParser 0.2 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
+		Write-Warning "LogSlothParser 0.3 is Currently in Beta and may not function at 100% (Export-LogSlothLog)"
 	}
 	
 	Switch ($Format) {
