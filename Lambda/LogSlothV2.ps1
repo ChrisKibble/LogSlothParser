@@ -64,7 +64,7 @@ Write-Host "Resource: $($LambdaInput.Resource)"
 Write-Host "Body Length: $($LambdaInput.Body.Length)"
 
 $data = $lambdaInput.Body
-$logType = Get-LogSlothType -logData $data
+$logType = Get-LogSlothType -logData $data -SkipWarning
 
 if($logType -eq [LogType]::Nothing) {
     Send-Response -StatusCode 400 -headers @{ "Content-Type" = "text/plain" } -body "Unable to determine log type. Sorry."
@@ -72,12 +72,12 @@ if($logType -eq [LogType]::Nothing) {
 
 Switch($LambdaInput.Resource) {
     "/log2json" {
-        $logObject = Import-LogSloth -logData $data
+        $logObject = Import-LogSloth -logData $data -SkipWarning
         Send-Response -statusCode 200 -headers @{ "content-type" = "application/json"; "LogSloth-LogType" = $logType } -body $($logObject.LogData | ConvertTo-Json -Depth 100)
         break
     }
     "/log2sanitizedjson" {
-        $logObject = Import-LogSlothSanitized -logData $data
+        $logObject = Import-LogSlothSanitized -logData $data -SkipWarning
         Send-Response -statusCode 200 -headers @{ "content-type" = "application/json"; "LogSloth-LogType" = $logType } -body $($logObject.LogData | ConvertTo-Json -Depth 100)
         break
     }
