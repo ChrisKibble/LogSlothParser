@@ -41,16 +41,10 @@ Function Send-Response {
 }
 
 # Dump Debugging Information for Testing
-Write-Host "LI"
+Write-Host "Lambda Input"
 Write-Host (ConvertTo-Json -InputObject $LambdaInput -Compress -Depth 5)
-Write-Host "Event"
-Write-Host (ConvertTo-Json -InputObject $Event -Compress -Depth 5)
-Write-Host "LE"
+Write-Host "Lambda Event"
 Write-Host (ConvertTo-Json -InputObject $LambdaEvent -Compress -Depth 5)
-Write-Host "LC"
-Write-Host (ConvertTo-Json -InputObject $LambdaContext -Compress -Depth 5)
-Write-Host "PSVT"
-Write-Host $PSVersionTable
 
 # Allow local ParamBody and Resource to be set for testing locally
 if($env:parambody) {
