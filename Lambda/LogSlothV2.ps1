@@ -51,11 +51,13 @@ Function Send-Response {
 	Exit
 }
 
+<#
 # Dump Debugging Information for Testing
 Write-Host "Lambda Input"
 Write-Host (ConvertTo-Json -InputObject $LambdaInput -Compress -Depth 5)
 Write-Host "Lambda Event"
 Write-Host (ConvertTo-Json -InputObject $LambdaEvent -Compress -Depth 5)
+#>
 
 # Allow local ParamBody and Resource to be set for testing locally
 if($env:parambody) {
@@ -69,10 +71,12 @@ If(-Not($LambdaInput)) {
     Throw "No Lambda Data"
 }
 
+<#
 # Dump Debugging Information for Testing
 Write-Host "Input is $($LambdaInput)"
 Write-Host "Resource: $($LambdaInput.Resource)"
 Write-Host "Body Length: $($LambdaInput.Body.Length)"
+#>
 
 $data = $lambdaInput.Body
 $logType = Get-LogSlothType -logData $data -SkipWarning
