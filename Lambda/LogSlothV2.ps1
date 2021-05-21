@@ -27,16 +27,27 @@ Function Send-Response {
 	
     Param(
         [int]$statusCode,
-        [array]$headers = @{"content-type"="text/plain"},
+        [hashtable]$headers = @{"content-type"="text/plain"},
         [string]$body
     )
     
+    Write-Host "Returning Status Code $statusCode"
+
+    <#
     @{
-	    "isBase64Encoded" = $false
 	    "statusCode" = $statusCode
-	    "body" = $body
+	    "body" = $bodys
 	    "headers" = $headers
 	}
+    #>
+
+    @{
+	    "isBase64Encoded" = $false
+        "statusCode" = $statusCode
+	    "body" = $body
+	    "headers" = $headers
+	} 
+
 	Exit
 }
 
