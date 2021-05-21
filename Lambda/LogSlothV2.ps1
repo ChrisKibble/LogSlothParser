@@ -96,6 +96,11 @@ Switch($LambdaInput.Resource) {
         Send-Response -statusCode 200 -headers @{ "content-type" = "application/json"; "LogSloth-LogType" = $logType } -body $($logObject.LogData | ConvertTo-Json -Depth 100)
         break
     }
+    "/log2html" {
+        $logObject = Import-LogSloth -LogData $data -SkipWarning
+        $logHTML = $logObject | ConvertTo-LogSlothHTML -SkipWarning -IncludeRawLog
+        Send-Response -statusCode 200 -headers @{ "content-type" = "text/html"; "LogSloth-LogType" = $logType } -body $logHTML
+    }
     default {
         Send-Response -statusCode 400 -headers @{ "debug-logsloth-bad-resource" = $LambdaInput.Resource } -body "I don't know what that resource is."
         break
